@@ -6,6 +6,21 @@ rng = np.random.default_rng()
 
 ABS_TOL = 1e-6
 
+def test_intersect_set_with_affine_subspace():
+    verts = np.array([[-1,0],[0,2],[3,3]])
+    A = np.array([2,-1])
+    b = -2
+    assert intersect_set_with_affine_subspace(verts, A, b) == {0, 1}
+
+def test_affine_dim():
+    A = np.array([[-1,0],[0,2],[-1.5,-1]])
+    assert affine_span_dim(A) == 1
+
+def test_linear_dim():
+    A = np.array([[1,-1],[2,-2],[-1,1]])
+    assert linear_span_dim(A) == 1
+    assert linear_span_dim(np.array([[0,0]])) == 0
+
 def test_span():
     A = np.array([[1,-1],[2,-2],[-1,1]])
     A_ = in_own_span(A)

@@ -64,9 +64,17 @@ def test_init():
     for i, facet in N.facets.items():
         assert facet.shape == (len(P.faces[-1][i]), 4)
 
+def test_unfold():
+    P = Tope.from_vertices(simplex)
+    G = get_facet_graph(P)
+    T = G.get_spanning_tree(root=0, skip=set())
+    N = Net(P, T)
     N.unfold()
 
-    facet_polys = {i: P.get_facet(i) for i in T.nodes}
+    vertices = np.concatenate(list(N.facets.values()))
+    assert affine_span_dim(vertices) == P.dim - 1
+
+#    facet_polys = {i: P.get_facet(i) for i in T.nodes}
 
 #    for i in T.nodes:
 #        for j in T.children[i]:

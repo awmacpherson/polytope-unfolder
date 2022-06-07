@@ -58,11 +58,11 @@ class Net:
     def __init__(self, P: Tope, T: Graph):
         self.tope: Tope = P
         self.tree: Graph = T # facet tree labelled by Pow(N)
-        self.vertices: np.ndarray = np.array(P.vertices)
+        #self.vertices: np.ndarray = np.array(P.vertices)
         #self.embedded_vertices: np.ndarray = self.vertices @ emb
 
         # mutable
-        self.facets = {i: self.vertices[list(T.node_labels[i])] for i in T.nodes}
+        self.facets = {i: self.tope.vertices[list(T.node_labels[i])] for i in T.nodes}
 
     def unfold(self, start = None): # modify facets dict in place
         start = self.tree.root if start is None else start
@@ -75,7 +75,7 @@ class Net:
             I = set.intersection(F0,F1)
 
             rotation, offset = rotate_into_hyperplane(
-                self.vertices, F0, F1, I
+                self.tope.vertices, F0, F1, I
             )
             self.apply_recurse(lambda X : ((X-offset)@rotation.T)+offset, start=node)
 

@@ -45,9 +45,8 @@ class Graph:
         self.edge_labels[at] = label
 
     def get_spanning_tree(self, root=None, skip=set()) -> Graph: 
-        logger.debug(f"We got {self.nodes} and {skip}")
         nodes = set.difference(self.nodes, skip)
-        logger.debug(f"Check if {nodes} is empty")
+        #Check if {nodes} is empty
         if not nodes: 
             logger.debug("Empty!")
             return Graph.empty()

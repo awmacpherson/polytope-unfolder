@@ -3,6 +3,21 @@ from loguru import logger
 
 ABS_TOL = 1e-6
 
+def intersect_set_with_affine_subspace(vertices: np.ndarray, A, b) -> set:
+    return set( np.arange(len(vertices)) [np.abs(A @ vertices.T - b) < ABS_TOL] )
+
+def affine_span_dim(A: np.ndarray) -> int:
+    return linear_span_dim(A - A.mean(axis=0))
+
+def linear_span_dim(A: np.ndarray) -> int:
+    "Return the dimension of the linear subspace spanned by some points."
+    U, S, V = np.linalg.svd(A)
+    # these assertions all pass:
+    # assert S.ndim == 1
+    # assert type(S) == np.ndarray
+    # assert S.shape[0] == min(A.shape)
+    return len(S[np.abs(S)>ABS_TOL])
+
 def in_own_span(A):
     "Return row vectors of A expressed in orthonormal basis for their linear span."
     # some issue with complex values?

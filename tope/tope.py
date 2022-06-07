@@ -1,6 +1,9 @@
 import polytope, numpy as np
-import networkx as nx
+from pypoman import compute_polytope_halfspaces
+
+#import networkx as nx
 #from networkx import minimum_spanning_arborescence, from_edgelist
+
 from loguru import logger
 import itertools, functools, collections
 from dataclasses import dataclass
@@ -32,8 +35,15 @@ class Tope:
     def from_vertices(cls, vertices):
         vertices = np.array(vertices)
         logger.debug(f"Computing from set of {vertices.shape[0]} vertices.")
-        _tope = polytope.qhull(np.array(vertices)) # converts to float
-        logger.debug(f"Convex hull has {_tope.vertices.shape[0]} vertices.")
+
+        _A, _b = compute_polytope_halfspaces(vertices)
+        assert _A.ndim == 2
+        assert _A.shape[1] == vertices.shape[1]
+        assert _b.ndim == 1
+        assert _b.shape[0] == _A.shape[0]
+
+#        _tope = polytope.qhull(np.array(vertices)) # converts to float
+#        logger.debug(f"Convex hull has {_tope.vertices.shape[0]} vertices.")
 
         dim = vertices.shape[1]
         nverts = vertices.shape[0]
@@ -43,12 +53,12 @@ class Tope:
 
         # facets we compute directly from supporting hyperplanes
         faces [-1] = [
-            set(
-                np.arange(nverts) [np.abs(h @ _tope.vertices.T - c) < 0.000001] 
-                # SELECTION MAY RESULT IN ROUNDING ERRORS
-            )
-            for h, c in zip(_tope.A, _tope.b)
+            intersect_set_with_affine_subspace(vertices, A, b) 
+            for A, b in zip(_A, _b)
         ]
+
+#        for i, face in enumerate(faces[-1]):
+#            logger.info(f"{dim-1}-face {i} has affine codimension {affine_span_codim(vertices[list(face)])}.") 
 
         eliminate_repetitions(faces [-1])
 
@@ -83,10 +93,20 @@ class Tope:
         
         return cls(vertices, faces)
 
+    def verify_face(self, i, k=-1):
+        k = self.dim + k if k < 0 else k
+        main:   set[int]    = self.faces[k][i]
+        main_l: list[int]   = list(main)
+        vertices:   np.ndarray = self.vertices[main_l]
+        
+        logger.info(f"{k}-face {i} has affine dimension {affine_span_dim(vertices)}.") 
+        #assert affine_span_codim(vertices) == self.dim - k
+        
+
     def get_face(self, i, k=-1):
-        main = self.faces[k][i]
-        main_l = list(main)
-        vertices = self.vertices[main_l]
+        main:   set[int]    = self.faces[k][i]
+        main_l: list[int]   = list(main)
+        vertices:   np.ndarray = self.vertices[main_l]
 
 #        faces_labels = [
 #            [
@@ -97,8 +117,8 @@ class Tope:
 #        ]
 #        faces, labels = zip((zip(j_faces_labels) for j_faces_labels in faces_labels))
 
-        faces = [[] for _ in self.faces[:k]]
-        labels = [[] for _ in self.faces[:k]]
+        faces:  list[list[int]] = [[] for _ in self.faces[:k]]
+        labels: list[list[int]] = [[] for _ in self.faces[:k]]
         for j, self_j_faces in enumerate(self.faces[:k]):
             for n, face in enumerate(self_j_faces):
                 if face.issubset(main):
@@ -251,15 +271,15 @@ class Tope:
         q =  set.intersection(self.faces[-1][i], self.faces[-1][j])
         return q in self.faces[-2]
 
-    def facet_incidence_graph(self) -> nx.Graph:
-        '''
-        Returns NetworkX Graph object representing incidences between facets.
-        '''
-        incidences = (
-            (i,j) 
-            for i, j in itertools.combinations(range(len(self.faces[-1])), 2)
-            if self.are_incident(i,j)
-        )
-        # ALT ALGO: iterate over codim 2 faces and check inclusions
-        # ALT ALGO: cache these data at time of discovering codim 2 faces
-        return nx.from_edgelist(incidences)
+#    def facet_incidence_graph(self) -> nx.Graph:
+#        '''
+#        Returns NetworkX Graph object representing incidences between facets.
+#        '''
+#        incidences = (
+#            (i,j) 
+#            for i, j in itertools.combinations(range(len(self.faces[-1])), 2)
+#            if self.are_incident(i,j)
+#        )
+#        # ALT ALGO: iterate over codim 2 faces and check inclusions
+#        # ALT ALGO: cache these data at time of discovering codim 2 faces
+#        return nx.from_edgelist(incidences)
