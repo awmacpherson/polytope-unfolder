@@ -74,9 +74,3 @@ def test_unfold():
     vertices = np.concatenate(list(N.facets.values()))
     assert affine_span_dim(vertices) == P.dim - 1
 
-#    facet_polys = {i: P.get_facet(i) for i in T.nodes}
-
-#    for i in T.nodes:
-#        for j in T.children[i]:
-#            for k in P.faces[-1][j]:
-#                assert facet_polys[i].__contains__(N.embedded_vertices[k]) == (k in P.faces[-1][i])

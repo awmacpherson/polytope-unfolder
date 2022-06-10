@@ -41,6 +41,7 @@ class Tope:
         assert _A.shape[1] == vertices.shape[1]
         assert _b.ndim == 1
         assert _b.shape[0] == _A.shape[0]
+        logger.debug(f"Found {len(_b)} facets.")
 
 #        _tope = polytope.qhull(np.array(vertices)) # converts to float
 #        logger.debug(f"Convex hull has {_tope.vertices.shape[0]} vertices.")
@@ -67,7 +68,7 @@ class Tope:
         
         # now do codimension 2 faces down to edges
         for k in range(dim-2, 0, -1):
-            logger.debug(f"Extracting {k}-diml faces...")
+            #logger.debug(f"Extracting {k}-diml faces...")
             for facet_i in faces[-1]:
                 for face_j in faces[k+1]:
                     if not face_j.issubset(facet_i):
@@ -85,7 +86,7 @@ class Tope:
                         #logger.debug(f"Removing {face_j}.")
                         removals.add(j+i+1)
 
-            logger.debug(f"Processing removals {removals}.")
+            #logger.debug(f"Processing removals {removals}.")
             for i in sorted(removals, reverse=True):
                 faces[k].pop(i)
 
