@@ -12,7 +12,8 @@ simplex = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[-1,-1,-1,-1]]
 
 vecs = np.array([[1,0,0],[0,2,0],[-1,-1,-1],[3,4,2]])
 
-
+"""
+# Do we need this any more?
 def test_affine():
     eq, offset = affine_span(vecs)
     assert eq.shape == (3,)
@@ -30,6 +31,7 @@ def test_affine():
 
     z_minus = apply_refl(z_plus[None,:], eq, offset)
     assert sign(z_plus, eq, offset) != sign(z_minus, eq, offset)
+"""
 
 def test_facet_graph():
     for poly in polys.values():

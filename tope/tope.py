@@ -109,8 +109,7 @@ class Tope:
         
         logger.info(f"{k}-face {i} has affine dimension {affine_span_dim(vertices)}.") 
         #assert affine_span_codim(vertices) == self.dim - k
-        
-
+    
     def get_face(self, i, k=-1):
         main:   set[int]    = self.faces[k][i]
         main_l: list[int]   = list(main)
@@ -138,10 +137,14 @@ class Tope:
         # let's label the faces too!
         P.labels = labels
         return P
+
+    def get_facet(self, i):
+        return self.get_face(i, -1)
     
     @property
     def in_own_span(self):
-        return Tope(in_own_span(self.vertices - self.vertices.mean(axis=0)), self.faces)
+        v, _ = in_own_span(self.vertices - self.vertices.mean(axis=0))
+        return Tope(v, self.faces)
 
     def ___init__(self, vertices):
         vertices = np.array(vertices)

@@ -39,3 +39,9 @@ def test_interface():
     for i in range(5):
         for j in range(5):
             assert (Delta.interface(i,j) is None) == (i==j)
+
+def test_in_own_span():
+    Delta = Tope.from_vertices(simplex)
+    F = Delta.get_facet(0)
+    F = F.in_own_span
+    assert F.dim == 3

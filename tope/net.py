@@ -3,25 +3,79 @@ import numpy as np
 from loguru import logger
 from .graph import Graph
 from .tope import Tope
-from .orth import rotate_into_hyperplane
+from .orth import rotate_into_hyperplane, in_own_span
 
 FLOAT_ERR = 0.000001
 
 def get_facet_graph(P: Tope) -> Graph:
     node_labels = dict(enumerate(P.faces[-1]))
-    return Graph.from_pairing(
-        node_labels, 
-        P.interface, 
-        node_labels=node_labels 
-    )
+    return Graph.from_pairing(node_labels, P.interface, node_labels=node_labels)
 
-def affine_span(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def put_in_own_span(N):
     """
+    Reencode vertices in basis for their own affine span. Apply to unfolded net. 
+    Orientation is normalised so that taking the inward-pointing normal as the 
+    last basis vector for the ambient space is oriented w.r.t. the standard basis.
+    """
+    root_facet = list(N.tope.faces[-1][N.tree.root])
+    ref_pt = N.tope.vertices[root_facet].mean(axis=0)
+    
+    offsets = [0] + [len(vertices) for vertices in N.facets.values()]
+    offsets = np.cumsum(offsets)
+    all_vertices = np.concatenate(list(N.facets.values()))
+    all_vertices, basis = in_own_span(all_vertices - ref_pt)
+                       
+    # Need to reflect in one axis if orientation of root face is wrong.
+    inward_normal = N.tope.vertices.mean(axis=0) - ref_pt
+    if np.linalg.det(np.c_[basis.T, inward_normal]) < 1:
+        all_vertices[:,0] = -all_vertices[:,0]
+    
+    for i in N.facets:
+        N.facets[i] = all_vertices[offsets[i]:offsets[i+1]]
+
+import functools
+from typing import Callable
+
+class Net:
+    def __init__(self, P: Tope, T: Graph):
+        self.tope: Tope = P
+        self.tree: Graph = T # facet tree labelled by Pow(num_vertices)
+
+        # mutable
+        self.facets = {i: self.tope.vertices[list(T.node_labels[i])] for i in T.nodes}
+
+    def unfold(self, start = None): # modify facets dict in place
+        start = self.tree.root if start is None else start
+
+        for node in self.tree.children[start]:
+            self.unfold(start=node)
+
+            F0 = self.tope.faces[-1][start]
+            F1 = self.tope.faces[-1][node]
+            I = set.intersection(F0,F1)
+
+            rotation, offset = rotate_into_hyperplane(
+                self.tope.vertices, F0, F1
+            )
+            self.apply_recurse(lambda X : ((X-offset)@rotation.T)+offset, start=node)
+
+    def apply_recurse(self, func: Callable, start=None):
+        start = self.tree.root if start is None else start
+        self.facets[start] = func(self.facets[start])
+        for node in self.tree.children[start]:
+            self.apply_recurse(func, start=node)
+
+        
+# DEPRECATED
+
+"""
+def affine_span(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    ""
     Assume that A spans a codimension one affine subspace and 
     that the ambient space has dimension at most 3.
     This second assumption is necessary to conclude that *any* n vectors
     span an (n-1)d affine hyperplane.
-    """
+    ""
     N = A.shape[1]
     
     offset = np.sum(A[:N], axis=0) / N # do this to avoid divide by zero shenanigans
@@ -49,39 +103,4 @@ def apply_refl(X: np.ndarray, eq, offset):
         eq,
         axes=0
     )
-
-
-import functools
-from typing import Callable
-
-class Net:
-    def __init__(self, P: Tope, T: Graph):
-        self.tope: Tope = P
-        self.tree: Graph = T # facet tree labelled by Pow(N)
-
-        # mutable
-        self.facets = {i: self.tope.vertices[list(T.node_labels[i])] for i in T.nodes}
-
-    def unfold(self, start = None): # modify facets dict in place
-        start = self.tree.root if start is None else start
-
-        for node in self.tree.children[start]:
-            self.unfold(start=node)
-
-            F0 = self.tope.faces[-1][start]
-            F1 = self.tope.faces[-1][node]
-            I = set.intersection(F0,F1)
-
-            rotation, offset = rotate_into_hyperplane(
-                self.tope.vertices, F0, F1
-            )
-            self.apply_recurse(lambda X : ((X-offset)@rotation.T)+offset, start=node)
-
-    def apply_recurse(self, func: Callable, start=None):
-        start = self.tree.root if start is None else start
-        self.facets[start] = func(self.facets[start])
-        for node in self.tree.children[start]:
-            self.apply_recurse(func, start=node)
-
-        
-
+"""
