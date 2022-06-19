@@ -91,8 +91,15 @@ class Tope:
                 faces[k].pop(i)
 
         logger.debug(f"Finished processing faces:\n {faces}")
+
+        # add metadata lists
+        metadata = []
+        for l in faces:
+            metadata.append([{}] * len(l))
         
-        return cls(vertices, faces)
+        newtope = cls(vertices, faces)
+        newtope.metadata = metadata
+        return newtope
 
     def verify_face(self, i, k=-1):
         k = self.dim + k if k < 0 else k

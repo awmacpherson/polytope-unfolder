@@ -58,8 +58,6 @@ class Net:
     def __init__(self, P: Tope, T: Graph):
         self.tope: Tope = P
         self.tree: Graph = T # facet tree labelled by Pow(N)
-        #self.vertices: np.ndarray = np.array(P.vertices)
-        #self.embedded_vertices: np.ndarray = self.vertices @ emb
 
         # mutable
         self.facets = {i: self.tope.vertices[list(T.node_labels[i])] for i in T.nodes}
@@ -75,7 +73,7 @@ class Net:
             I = set.intersection(F0,F1)
 
             rotation, offset = rotate_into_hyperplane(
-                self.tope.vertices, F0, F1, I
+                self.tope.vertices, F0, F1
             )
             self.apply_recurse(lambda X : ((X-offset)@rotation.T)+offset, start=node)
 
@@ -86,26 +84,4 @@ class Net:
             self.apply_recurse(func, start=node)
 
         
-
-# DEPRECATED
-
-    def interface(self, i, j): # doesn't update during unfolding
-        return self.embedded_vertices[list(self.tree.edge_labels[(i,j)])]
-
-    def interface_h(self, i, j):
-        return affine_span(self.interface(i,j))
-
-    def folded(self, i, j):
-        "Check if the two cells associated to an edge are folded."
-        eq, offset = affine_span(self.interface(i,j))
-        return sign(self.facets[i], eq, offset) == sign(self.facets[j], eq, offset)
-
-
-    def _unfold(self, *pretransform, src = None): # modify facets dict in place
-        src = self.tree.root if src is None else src
-        for inc in self.children(src):
-
-            transform = pretransform + [get_refl(inc.interstice)] \
-                    if inc.is_folded else pretransform
-            self.unfold(*transform, src=inc.facet2)
 

@@ -23,9 +23,11 @@ def test_linear_dim():
 
 def test_span():
     A = np.array([[1,-1],[2,-2],[-1,1]])
-    A_ = in_own_span(A)
+    A_, basis = in_own_span(A)
     assert A_.shape[0] == A.shape[0]
     assert A_.shape[1] == 1
+    assert basis.shape[0] == 1
+    assert basis.shape[1] == A.shape[1]
 
 def test_get_basis():
     P = Tope.from_vertices([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[-1,-1,-1,-1]])
@@ -78,7 +80,7 @@ def test_rotate():
     I = set.intersection(F0,F1)
     assert len(I) == 2
 
-    rotation, offset = rotate_into_hyperplane(P.vertices, F0, F1, I)
+    rotation, offset = rotate_into_hyperplane(P.vertices, F0, F1)
     assert rotation.ndim == 2
     assert rotation.shape[0] == rotation.shape[1] == P.dim
 
