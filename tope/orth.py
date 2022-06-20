@@ -19,32 +19,22 @@ def linear_span_dim(A: np.ndarray) -> int:
     # assert S.shape[0] == min(A.shape)
     return len(S[np.abs(S)>ABS_TOL])
 
-def in_own_span(A):
-    "Return row vectors of A expressed in orthonormal basis for their linear span."
+def in_own_span(A, orientation=None):
+    """
+    Return row vectors of A expressed in orthonormal basis for their linear span.
+    If set, orientation is a vector not tangent to A (only makes sense when
+    A spans a hyperplane).
+    """
     # some issue with complex values?
     U, S, V = np.linalg.svd(A)
     assert A.shape[1] == len(S)
     relevant_indices = np.abs(S)>0.1
+
+    basis = V[relevant_indices]
+    if orientation is not None and np.linalg.det(np.c_[basis.T, orientation]) < 0:
+        V[0] = -V[0] # reverse first basis vector
+        
     return (A @ np.linalg.inv(V))[:,relevant_indices], V[relevant_indices]
-
-def get_basis(
-        vertices: np.ndarray, extends: list = []
-        ) -> list[int]:
-    "Return row indices that pick out a nonsingular square matrix."
-    N = vertices.shape[1]
-    
-    remaining = set(range(len(vertices))).difference(extends)
-
-    for i in range(N):
-        while True:
-            if affine_span_dim(vertices[l[:i]]) == i-1:
-                break
-            else:
-                try:
-                    l[i-1] = q.pop()
-                except KeyError:
-                    raise ValueError("Vertices do not span space.")
-    return l
 
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> (float, float, float):
     "Returns the angle in degrees between two vectors along with its cosine and sine."

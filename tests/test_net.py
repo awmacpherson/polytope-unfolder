@@ -9,29 +9,7 @@ with open(POLYS_PATH) as fd:
 
 simplex = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[-1,-1,-1,-1]]
 
-
 vecs = np.array([[1,0,0],[0,2,0],[-1,-1,-1],[3,4,2]])
-
-"""
-# Do we need this any more?
-def test_affine():
-    eq, offset = affine_span(vecs)
-    assert eq.shape == (3,)
-    assert offset.shape == (3,)
-    assert (np.dot(vecs - offset, eq) < FLOAT_ERR).all()
-
-    res = apply_refl(vecs, eq, offset)
-
-#    assert (np.abs(res - vecs) < FLOAT_ERR).all()
-    
-    z_plus = np.array([0,0,1])
-    z_minus = np.array([0,0,-1])
-    #assert type(sign(z_plus, eq, offset)) == bool # false
-    assert sign(z_plus, eq, offset) != sign(z_minus, eq, offset)
-
-    z_minus = apply_refl(z_plus[None,:], eq, offset)
-    assert sign(z_plus, eq, offset) != sign(z_minus, eq, offset)
-"""
 
 def test_facet_graph():
     for poly in polys.values():
@@ -60,7 +38,7 @@ rng = default_rng()
 def test_init():
     P = Tope.from_vertices(simplex)
     G = get_facet_graph(P)
-    T = G.get_spanning_tree(root=0, skip=set())
+    T = G.get_spanning_tree()
     assert len(T.nodes) == len(G.nodes)
     N = Net(P, T)
     for i, facet in N.facets.items():
@@ -69,10 +47,14 @@ def test_init():
 def test_unfold():
     P = Tope.from_vertices(simplex)
     G = get_facet_graph(P)
-    T = G.get_spanning_tree(root=0, skip=set())
+    T = G.get_spanning_tree()
     N = Net(P, T)
     N.unfold()
 
     vertices = np.concatenate(list(N.facets.values()))
     assert affine_span_dim(vertices) == P.dim - 1
+
+    N = N.in_own_span()
+    for _, v in N.facets.items():
+        assert v.shape[1] == P.dim - 1
 

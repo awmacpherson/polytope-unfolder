@@ -29,6 +29,12 @@ def test_span():
     assert basis.shape[0] == 1
     assert basis.shape[1] == A.shape[1]
 
+def test_orientation():
+    A = np.array([[1,-1],[2,-2],[-1,1]])
+    o = np.array([1,1])
+    A_, basis = in_own_span(A, orientation=o)
+    assert A_[0] > 0
+
 def test_get_basis():
     P = Tope.from_vertices([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[-1,-1,-1,-1]])
     F0 = P.faces[-1][0]

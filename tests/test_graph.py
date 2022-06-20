@@ -3,9 +3,13 @@ from tope.graph import Graph
 edges_1 = [(0,1),(1,2),(2,4), (1,4)]
 edges_2 = [(5,6), (6,5)]
 
-def pairing(d):
-    def pair(i,j):
-        return i+j if (i,j) in d or (j,i) in d else None
+def pairing(d, symmetrize=True):
+    if symmetrize:
+        def pair(i,j):
+            return i+j if (i,j) in d or (j,i) in d else None
+    else:
+        def pair(i,j):
+            return i+j if (i,j) in d else None
     return pair
 
 def test_init():
@@ -54,3 +58,12 @@ def test_spanning_tree():
 
     T = Graph.empty().get_spanning_tree()
     assert T == Graph.empty()
+
+def test_iter_from():
+    G = Graph.from_pairing(range(0,5), pairing(edges_1, symmetrize=False))
+    l = list(G.iter_from(1))
+    assert len(l) == 4
+    for i in l:
+        assert type(i) == int
+    assert l[0] == 1
+    assert l[3] == 4

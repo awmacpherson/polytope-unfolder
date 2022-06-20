@@ -44,7 +44,9 @@ class Graph:
         self.children[at[0]].add(at[1])
         self.edge_labels[at] = label
 
-    def get_spanning_tree(self, root=None, skip=set()) -> Graph: 
+    def get_spanning_tree(self, root=None, skip=None) -> Graph: 
+        if skip is None:
+            skip = set()
         nodes = set.difference(self.nodes, skip)
         #Check if {nodes} is empty
         if not nodes: 
@@ -77,3 +79,9 @@ class Graph:
                 label=self.edge_labels[(root,node)]
             )
         return T
+
+    def iter_from(self, start: int):
+        yield start
+        for child in self.children[start]:
+            for i in self.iter_from(child):
+                yield i
