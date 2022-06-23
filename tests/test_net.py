@@ -1,13 +1,13 @@
 from tope import *
 from tope.net import *
+from tests import v_4simplex as simplex, v_3simplex, normalize_polygon
+
 POLYS_PATH = "polys.json"
 import json
 from loguru import logger
 
 with open(POLYS_PATH) as fd:
     polys = json.load(fd)
-
-simplex = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[-1,-1,-1,-1]]
 
 vecs = np.array([[1,0,0],[0,2,0],[-1,-1,-1],[3,4,2]])
 
@@ -45,7 +45,7 @@ def test_init():
         assert facet.shape == (len(P.faces[-1][i]), 4)
 
 def test_unfold():
-    P = Tope.from_vertices(simplex)
+    P = Tope.from_vertices(v_3simplex)
     G = get_facet_graph(P)
     T = G.get_spanning_tree()
     N = Net(P, T)
@@ -58,3 +58,11 @@ def test_unfold():
     for _, v in N.facets.items():
         assert v.shape[1] == P.dim - 1
 
+    for k, v in N.facets.items():
+        net_face = normalize_polygon(v)
+        logger.debug(f"Net face:\n{net_face}")
+        tope_face = normalize_polygon(P.get_facet(k).vertices)
+        logger.debug(f"Tope face: \n{tope_face}")
+
+        assert ( np.abs(net_face - tope_face) < ABS_TOL ).all()
+        

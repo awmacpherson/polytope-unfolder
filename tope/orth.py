@@ -22,27 +22,28 @@ def linear_span_dim(A: np.ndarray) -> int:
 def in_own_span(A, orientation=None):
     """
     Return row vectors of A expressed in orthonormal basis for their linear span.
-    If set, orientation is a vector not tangent to A (only makes sense when
-    A spans a hyperplane).
+    If set, orientation is a stack of vectors complementary to A.
     """
     # some issue with complex values?
     U, S, V = np.linalg.svd(A)
-    assert A.shape[1] == len(S)
-    relevant_indices = np.abs(S)>0.1
+    relevant_indices = np.ndarray(len(V), dtype=bool) # init False
+    relevant_indices[:len(S)] = np.abs(S)>0.1
 
     basis = V[relevant_indices]
     if orientation is not None and np.linalg.det(np.c_[basis.T, orientation]) < 0:
         V[0] = -V[0] # reverse first basis vector
         
-    return (A @ np.linalg.inv(V))[:,relevant_indices], V[relevant_indices]
+    return (A @ V.T)[:,relevant_indices], V[relevant_indices]
 
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> (float, float, float):
     "Returns the angle in degrees between two vectors along with its cosine and sine."
     nrm = np.linalg.norm(v1) * np.linalg.norm(v2)
     if nrm < ABS_TOL: 
         logger.warning(f"Norm is small, angle calculation may be unreliable.")
-    cos_theta = np.dot(v1, -v2) / nrm
-    sin_theta = np.sqrt(1 - cos_theta*cos_theta)
+    cos_theta = np.dot(v1, v2) / nrm
+    sin_theta = np.sqrt(1 - cos_theta*cos_theta) # can't be negative!
+    if np.linalg.det(np.c_[v1,v2]) < 0:
+        sin_theta = -sin_theta
     theta = np.arccos(cos_theta)*180/np.pi
 
     return theta, cos_theta, sin_theta
@@ -80,6 +81,7 @@ def rotate_into_hyperplane(
     # Now apply Gram-Schmidt to get an orthogonal basis
     orth_basis, _   = np.linalg.qr((flag_basis - ref_pt).T)  # Gram-Schmidt decomposition
     orth_basis_i    = orth_basis.T              # Transpose = inverse
+    assert (orth_basis_i @ orth_basis - np.eye(N) < ABS_TOL).all()
 
     # Pick reference points in the interior of each face and
     # orthogonal project onto invariant (N-2)-plane of rotation
@@ -93,15 +95,11 @@ def rotate_into_hyperplane(
     #    logger.warning("High error in projection.")
 
     # Now we construct the rotation...
-    theta, cos_theta, sin_theta = angle_between(F1_centre_Q, F0_centre_Q)
+    theta, cos_theta, sin_theta = angle_between(F1_centre_Q, -F0_centre_Q)
     logger.debug(f"Rotating by {theta:.2f} degrees...")
 
     # clockwise rotation by theta (rotation into F0 plane with opposite sign)
     rotator_2d = np.array( [ [ cos_theta, sin_theta ], [ -sin_theta, cos_theta ] ] )
-
-    # if the orientation is flipped we need to rotate in the opposite direction
-    if np.linalg.det(np.stack([F0_centre_Q, F1_centre_Q])) > 0: 
-        rotator_2d = rotator_2d.T
 
     # Now put it together to NxN matrix
     rotator = np.zeros((N,N))

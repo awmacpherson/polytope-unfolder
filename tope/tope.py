@@ -110,7 +110,7 @@ class Tope:
     
     def get_face(self, i, k=-1):
         main:   set[int]    = self.faces[k][i]
-        main_l: list[int]   = list(main)
+        main_l: list[int]   = sorted(main) # guarantee ordering of vertices
         vertices:   np.ndarray = self.vertices[main_l]
 
         faces:  list[list[int]] = [[] for _ in self.faces[:k]]

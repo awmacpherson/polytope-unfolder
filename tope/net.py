@@ -55,7 +55,7 @@ class Net:
 
             rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
             for i in self.tree.iter_from(node):
-                self.facets[i] = ((self.facets[i] - offset) @ rotation.T) + offset
+                self.facets[i] = ((self.facets[i] - offset) @ rotation) + offset
 
         return self
 
