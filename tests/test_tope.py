@@ -1,12 +1,26 @@
 from tope import *
 from tope.orth import ABS_TOL, angle_between
 from tope.net import get_facet_graph
-from tests import normalize_polygon, v_24cell, v_4simplex
+from tests import normalize_polygon, v_24cell, v_4simplex, v_3simplex
+
+
 
 POLYS_PATH = "polys.json"
 import json
 from loguru import logger
+from numpy.random import default_rng; rng = default_rng()
 
+def test_metadata():
+    Delta = Tope.from_vertices(v_24cell)
+    Delta.save_index(key = "pasta")
+    for k in range(len(Delta.faces)):
+        for i in range(len(Delta.faces[k])):
+            assert Delta.metadata[k][i]["pasta"] == i
+    
+    Gamma = Delta.get_face(0, 2)
+    for k, k_faces in enumerate(Gamma.faces):
+        for i in range(len(k_faces)):
+            assert Delta.get_face(Gamma.metadata[k][i]["pasta"], k) == Gamma.get_face(i, k)
 
 with open(POLYS_PATH) as fd:
     polys = json.load(fd)
@@ -44,29 +58,33 @@ def test_interface():
 
 def test_in_own_span():
     Delta = Tope.from_vertices(v_4simplex)
-    F = Delta.get_facet(0)
-    #F = F.in_own_span()
+    for i in range(5):
+        Delta.metadata[0][i]["butter"] = rng.random(size=4)
+    F = Delta.get_facet(0, metadata_keys = ["butter"])
+    
     assert F.dim == 3
     # ordering of vertices preserved
     assert sorted(F.faces[0]) == F.faces[0]
 
-tetra = [[1,0,0], [0,1,0], [0,0,1], [-1,-1,-1]]
+    for i in range(4):
+        assert len(F.metadata[0][i]["butter"]) == 3
 
 def test_orientations():
-    P = Tope.from_vertices(tetra)
+    P = Tope.from_vertices(v_4simplex)
+    P.save_index()
     for i in range(4):
         for j in range(4):
             if i == j: continue
-            # get index of intersection
+            # get index in list of codim 2 faces of intersection
             I = set.intersection(P.faces[-1][i], P.faces[-1][j])
             k = P.faces[-2].index(I)
 
             Fi = P.get_facet(i) # triangle
-            idx_k_in_i = Fi.labels[-1].index(k)
+            idx_k_in_i = [meta["index"] for meta in Fi.metadata[-1]].index(k)
             or_k_in_i = np.linalg.det(Fi.vertices[list(Fi.faces[-1][idx_k_in_i])])
             
             Fj = P.get_facet(j)
-            idx_k_in_j = Fj.labels[-1].index(k)
+            idx_k_in_j = [meta["index"] for meta in Fj.metadata[-1]].index(k)
             or_k_in_j = np.linalg.det(Fj.vertices[list(Fj.faces[-1][idx_k_in_j])])
 
             assert or_k_in_i * or_k_in_j < 0
@@ -83,18 +101,20 @@ def normalize_polygon(A, flip=False):
 def test_similarity():
     "Test that common 2-faces of adjacent 3-faces are similar up to a flip."
     P = Tope.from_vertices(v_24cell)
+    P.save_index()
+
     for i, j in get_facet_graph(P).edge_labels:
         # get index of intersection
         I = set.intersection(P.faces[-1][i], P.faces[-1][j])
         k = P.faces[-2].index(I)
 
         Fi = P.get_facet(i) # 3-cell
-        idx_k_in_i = Fi.labels[-1].index(k)
+        idx_k_in_i = [meta["index"] for meta in Fi.metadata[-1]].index(k)
         Gik = Fi.get_facet(idx_k_in_i).vertices
         Gik = normalize_polygon(Gik)
 
         Fj = P.get_facet(j)
-        idx_k_in_j = Fj.labels[-1].index(k)
+        idx_k_in_j = [meta["index"] for meta in Fj.metadata[-1]].index(k)
         Gjk = Fj.get_facet(idx_k_in_j).vertices
         Gjk = normalize_polygon(Gjk, flip=True)
 
@@ -106,3 +126,14 @@ def test_similarity():
                 ((normalize_polygon(Gk, True) - Gik) < ABS_TOL).all()
 
         if i > 7: break # speed things up a bit
+
+def test_cut_faces():
+    P = Tope.from_vertices(v_3simplex)
+    hyperplanes = [(rng.normal(size=3), np.array([a,a,a])) for a in np.arange(-1,1,.2)]
+    P.cut_2faces_with_hyperplanes(hyperplanes)
+    
+    for k in range(len(P.faces[2])):
+        size = P.metadata[2][k]["cuts"].shape
+        assert size[0] > 0
+        assert size[1] == 2
+        assert size[2] == P.dim

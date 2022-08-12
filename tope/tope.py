@@ -89,7 +89,7 @@ class Tope:
         # add metadata lists
         metadata = []
         for l in faces:
-            metadata.append([{}] * len(l))
+            metadata.append([{} for _ in l])
         
         return cls(vertices, faces, metadata)
 
@@ -107,14 +107,61 @@ class Tope:
         
         logger.info(f"{k}-face {i} has affine dimension {affine_span_dim(vertices)}.") 
         #assert affine_span_codim(vertices) == self.dim - k
-    
+
+    def save_index(self, key = "index"):
+        """
+        Save indices of faces into metadata under <key> so that they are preserved on 
+        passing to sub-Topes. Overwrites existing metadata for <key>.
+        """
+        for k, faces_list in enumerate(self.faces):
+            for i, face in enumerate(faces_list):
+                self.metadata[k][i][key] = i
+
     def get_face(self, i, k=-1):
+        """
+        Returns a Tope object consisting of all subfaces of a given face.
+        Metadata is preserved. Makes no guarantees about orientation. 
+        """
+        target_face:   set[int]    = self.faces[k][i]
+        main_l: list[int]   = sorted(target_face) # sorted list of indices into self.vertices
+        # main_l: range(len(target_face)) -> range(len(tope))
+
+        vertices:   np.ndarray = self.vertices[main_l] # vertices of face
+
+        # note: [[]] * N creates a list of N references to the same underlying list!
+        # So we have to use this list comprehension.
+        faces:  list[list[int]]             = [[] for _ in self.faces[:k]]
+        meta:   list[list[dict[str, Any]]]  = [[] for _ in self.faces[:k]]
+
+        for j, all_j_faces in enumerate(self.faces[:k]):
+            for n, face in enumerate(all_j_faces):
+                if face.issubset(target_face):
+                    # convert indices into range(len(tope)) 
+                    # to indices into range(len(target_face))
+                    faces[j].append(set([main_l.index(v) for v in face]))
+
+                    # Copy metadata
+                    meta[j] .append(self.metadata[j][n])
+
+        return Tope(vertices, faces, meta)
+
+    def __eq__(self, other):
+        return (self.vertices == other.vertices).all() and self.faces == other.faces\
+                and self.metadata == other.metadata
+
+    def _get_face(self, i, k=-1):
+        """
+        Returns a Tope object consisting of all subfaces of a given face.
+        Metadata is preserved. If there is no "label" metadata, add it with
+        an index into 
+        """
         main:   set[int]    = self.faces[k][i]
         main_l: list[int]   = sorted(main) # guarantee ordering of vertices
         vertices:   np.ndarray = self.vertices[main_l]
 
         faces:  list[list[int]] = [[] for _ in self.faces[:k]]
         labels: list[list[int]] = [[] for _ in self.faces[:k]]
+
         for j, self_j_faces in enumerate(self.faces[:k]):
             for n, face in enumerate(self_j_faces):
                 if face.issubset(main):
@@ -123,27 +170,63 @@ class Tope:
 
         P = Tope(vertices, faces)
 
-        # let's label the faces too!
-        P.labels = labels
+        P.labels = labels # DEPRECATE --- to be removed
         return P
 
-    def get_facet(self, i):
+    def get_facet(self, i, metadata_keys = []):
         inward_normal = self.vertices.mean(axis=0) - \
                 self.vertices[list(self.faces[-1][i])].mean(axis=0)
-        return self.get_face(i, -1).in_own_span(orientation = inward_normal)
+        return self.get_face(i, -1).in_own_span(orientation = inward_normal,
+                metadata_keys = metadata_keys)
     
-    def in_own_span(self, orientation=None):
-        v, _ = in_own_span(self.vertices - self.vertices.mean(axis=0), orientation)
-        P = Tope(v, self.faces)
-        if hasattr(self, "labels"):
-            P.labels = self.labels
+    def in_own_span(self, orientation=None, metadata_keys = []):
+        """
+        Return self with vertices expressed in a basis for its own span.
+        Apply same change of basis to chosen metadata keys.
+        """
+        v, basis = in_own_span(self.vertices - self.vertices.mean(axis=0), orientation)
+
+        P = Tope(v, self.faces, self.metadata)
+
+        for key in metadata_keys:
+            P.apply_to(lambda x: x @ basis.T, key)
+        
         return P
 
-
     def interface(self, i, j):
-        """Return the intersection of two facets if codimension two or None."""
+        """
+        Return the intersection of two facets if codimension two or None.
+        Used in get_facet_graph.
+        """
         s = set.intersection(self.faces[-1][i], self.faces[-1][j])
         #logger.debug(f"Found intersection {s}.")
         return s if s in self.faces[-2] else None
 
+    def apply_to(self, transform, key):
+        """
+        Apply transform to all metadata entries under key.
+        """
+        for k in range(self.dim):
+            for i in range(len(self.faces[k])):
+                if key in self.metadata[k][i]:
+                    self.metadata[k][i][key] = transform(self.metadata[k][i][key])
+
+    def cut_2faces_with_hyperplanes(self, hyperplanes) -> list[np.ndarray]: # [2][2]float
+        """
+        Goes through a list of hyperplanes, recording intersections with 2-faces.
+        Attaches it to those 2-faces as metadata under "cuts."
+        """
+        # this operation can't easily be stacked and carried out in numpy
+        # because of branching in intersect_*_with_hyperplane methods.
+        # or maybe it could if I did it a cleverer way.
+
+        tmp = []
+        for i, face in enumerate(self.faces[2]):
+            X = self.get_face(i,2)
+            for H in hyperplanes: # [self.dim], [self.dim]
+                q = intersect_polygon_with_hyperplane(X, H)
+                if q is not None:
+                    tmp.append(q)
+            self.metadata[2][i]["cuts"] = np.stack(tmp)
+            tmp.clear()
 

@@ -59,7 +59,27 @@ class Net:
 
         return self
 
-    def in_own_span(N):
+    def unfold_with_metadata(self, start = None, meta_keys = []): 
+        # as unfold(), but also modify in-place metadata with keys listed in decoration
+        start = self.tree.root if start is None else start
+
+        for node in self.tree.children[start]:
+            self.unfold(start=node)
+
+            F0 = self.tope.faces[-1][start]
+            F1 = self.tope.faces[-1][node]
+
+            rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
+            rotate = lambda x : ((x - offset) @ rotation) + offset
+            
+            for i in self.tree.iter_from(node):
+                self.facets[i] = rotate(self.facets[i])
+                for k in meta_keys:
+                    self.tope.metadata[-1][i][k] = rotate(self.tope.metadata[-1][i][k])
+
+        return self
+
+    def in_own_span(N, meta_keys = []):
         """
         Reencode vertices in basis for their own affine span. Apply to unfolded net. 
         Orientation is normalised so that taking the inward-pointing normal as the 
@@ -72,8 +92,13 @@ class Net:
         offsets = [0] + [len(vertices) for vertices in N.facets.values()]
         offsets = np.cumsum(offsets)
         all_vertices = np.concatenate(list(N.facets.values()))
-        all_vertices, basis = in_own_span(all_vertices - ref_pt, orientation=inward_normal)
-                           
+        all_vertices, basis = in_own_span(
+                all_vertices - ref_pt, 
+                orientation=inward_normal
+                )
+
+        # TODO fix metadata transformations
+        
         # Need to reflect in one axis if orientation of root face is wrong.
 #        if np.linalg.det(np.c_[basis.T, inward_normal]) < 1:
 #            all_vertices[:,0] = -all_vertices[:,0]

@@ -1,8 +1,67 @@
 import numpy as np
 from typing import Union
 from loguru import logger
+import itertools
 
 ABS_TOL = 1e-6
+
+intersection_err = "Got more than 2 endpoints when intersecting " +\
+        "{hyperplane} with {polygon}.\n I need help sorting this out!"
+
+def intersect_polygon_with_hyperplane(polygon, hyperplane) -> np.ndarray: # [2]float
+    intersections = []
+    for edge in polygon.faces[1]:
+        intersections.extend(
+                intersect_line_segment_with_hyperplane(
+                    polygon.vertices[list(edge)], hyperplane
+                    )
+                )
+
+    if len(intersections) > 2: 
+        logger.debug("Found more than 2 intersections. Attempting to remove repeated instances...")
+        # There could be an intersection at a vertex that was counted twice.
+        # Build up list of redundant intersections.
+        removals = set()
+        for u, v in itertools.combinations(enumerate(intersections), r=2):
+            i, u = u
+            j, v = v
+            if (np.abs(u-v) < ABS_TOL).all():
+                removals.add(j)
+
+        # Pop removals in reverse order
+        for r in sorted(removals, reverse=True):
+            intersections.pop(r)
+
+    if len(intersections) < 2:
+        return None
+    
+    if len(intersections) == 2:
+        return np.array(intersections) # same as np.stack
+
+    # If we reached this point, something went unrecoverably wrong.
+    raise ValueError(intersection_err.format(hyperplane, polygon))
+
+def intersect_line_segment_with_hyperplane(I, H) -> list:
+    """
+    Finds point of intersection, if any, of I = (startpt, endpt) with H = (kernel, offset).
+    Returns:
+    - [] if no intersection;
+    - [p] if there is an intersection at point p;
+    - list(I) if I is contained in H.
+    """
+    A, offset = H
+    u, v = I[0] - offset, I[1] - offset # homogenize
+
+    pos = A @ v
+    vel = A @ (u - v) # in dual line to {A = 0}
+    if pos == 0 and vel == 0: # I is contained in H
+        return list(I)
+    t = -pos / vel
+    if t > -ABS_TOL and t < 1 + ABS_TOL:
+        return [t * I[0] + (1-t) * I[1]]
+    return []
+
+
 
 def intersect_set_with_affine_subspace(vertices: np.ndarray, A, b) -> set:
     return set( np.arange(len(vertices)) [np.abs(A @ vertices.T - b) < ABS_TOL] )
@@ -22,6 +81,7 @@ def linear_span_dim(A: np.ndarray) -> int:
 def in_own_span(A, orientation=None):
     """
     Return row vectors of A expressed in orthonormal basis for their linear span.
+    Also return said basis; basis.T is then a map from the ambient space to the subspace.
     If set, orientation is a stack of vectors complementary to A.
     """
     # some issue with complex values?
@@ -31,9 +91,9 @@ def in_own_span(A, orientation=None):
 
     basis = V[relevant_indices]
     if orientation is not None and np.linalg.det(np.c_[basis.T, orientation]) < 0:
-        V[0] = -V[0] # reverse first basis vector
+        basis[0] = -basis[0] # reverse first basis vector
         
-    return (A @ V.T)[:,relevant_indices], V[relevant_indices]
+    return (A @ basis.T), basis
 
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> (float, float, float):
     "Returns the angle in degrees between two vectors along with its cosine and sine."

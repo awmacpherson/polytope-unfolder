@@ -7,6 +7,44 @@ rng = np.random.default_rng()
 
 ABS_TOL = 1e-6
 
+def test_intersect_line_segment_with_hyperplane():
+    hyperplane = (np.array([1,0,0]), np.array([4,3,3]))
+    
+    # property test (fuzz me)
+    seg = (rng.normal(4, size=3), rng.normal(4, 7, size=3))
+    for p in intersect_line_segment_with_hyperplane(seg, hyperplane):
+        assert np.abs(p[0] - 4) < ABS_TOL
+
+    # no intersection
+    seg[0][0] = 3
+    seg[1][0] = 3.6
+    i = intersect_line_segment_with_hyperplane(seg, hyperplane)
+    assert i == []
+
+    # one intersection
+    seg[1][0] = 5
+    i = intersect_line_segment_with_hyperplane(seg, hyperplane)
+    assert len(i) == 1
+    assert np.abs(i[0][0] - 4) < ABS_TOL
+
+    # containment
+    seg[0][0] = 4
+    seg[1][0] = 4
+    i = intersect_line_segment_with_hyperplane(seg, hyperplane)
+    assert len(i) == 2
+
+def test_intersect_polygon_with_hyperplane():
+    P = Tope.from_vertices(v_3simplex)
+    H = (rng.normal(size=3), np.zeros(3))
+
+    has_intersection = []
+    for i in range(4):
+        intersections = intersect_polygon_with_hyperplane(P.get_face(i), H)
+        assert intersections is None or len(intersections) == 2
+        if intersections is not None:
+            has_intersection.extend(intersections)
+    assert has_intersection
+
 def test_intersect_set_with_affine_subspace():
     verts = np.array([[-1,0],[0,2],[3,3]])
     A = np.array([2,-1])
