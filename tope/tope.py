@@ -8,6 +8,7 @@ from loguru import logger
 import itertools, functools, collections
 from dataclasses import dataclass
 from typing import Any
+from copy import deepcopy
 
 from .orth import *
 
@@ -140,8 +141,11 @@ class Tope:
                     # to indices into range(len(target_face))
                     faces[j].append(set([main_l.index(v) for v in face]))
 
-                    # Copy metadata
-                    meta[j] .append(self.metadata[j][n])
+                    # (deep) copy metadata
+                    # deep copy is necessary here; otherwise updating metadata for 
+                    # face also changes it for the parent
+                    # TODO: make deep copying optional
+                    meta[j] .append(deepcopy(self.metadata[j][n]))
 
         return Tope(vertices, faces, meta)
 
@@ -149,6 +153,7 @@ class Tope:
         return (self.vertices == other.vertices).all() and self.faces == other.faces\
                 and self.metadata == other.metadata
 
+    # DEPRECATED
     def _get_face(self, i, k=-1):
         """
         Returns a Tope object consisting of all subfaces of a given face.
@@ -184,12 +189,13 @@ class Tope:
         Return self with vertices expressed in a basis for its own span.
         Apply same change of basis to chosen metadata keys.
         """
-        v, basis = in_own_span(self.vertices - self.vertices.mean(axis=0), orientation)
+        origin = self.vertices.mean(axis=0)
+        v, basis = in_own_span(self.vertices - origin, orientation)
 
         P = Tope(v, self.faces, self.metadata)
 
         for key in metadata_keys:
-            P.apply_to(lambda x: x @ basis.T, key)
+            P.apply_to(lambda x: (x-origin) @ basis.T, key)
         
         return P
 
@@ -224,9 +230,10 @@ class Tope:
         for i, face in enumerate(self.faces[2]):
             X = self.get_face(i,2)
             for H in hyperplanes: # [self.dim], [self.dim]
-                q = intersect_polygon_with_hyperplane(X, H)
+                logger.debug(f"Intersecting with hyperplane {H}.")
+                q = intersect_polygon_with_hyperplane(X, H) # returns list of [2][dim]float
                 if q is not None:
                     tmp.append(q)
-            self.metadata[2][i]["cuts"] = np.stack(tmp)
+            self.metadata[2][i]["cuts"] = np.stack(tmp) if tmp else np.zeros((0,2,self.dim))
             tmp.clear()
 

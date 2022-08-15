@@ -6,7 +6,7 @@ import itertools
 ABS_TOL = 1e-6
 
 intersection_err = "Got more than 2 endpoints when intersecting " +\
-        "{hyperplane} with {polygon}.\n I need help sorting this out!"
+        "{} with {}.\nIntersections: {}\nI need help sorting this out!"
 
 def intersect_polygon_with_hyperplane(polygon, hyperplane) -> np.ndarray: # [2]float
     intersections = []
@@ -38,8 +38,12 @@ def intersect_polygon_with_hyperplane(polygon, hyperplane) -> np.ndarray: # [2]f
     if len(intersections) == 2:
         return np.array(intersections) # same as np.stack
 
+    if np.abs((polygon.vertices - hyperplane[1]) @ hyperplane[0]).all() < ABS_TOL:
+        # entire polygon is contained in the hyperplane.
+        return None
+
     # If we reached this point, something went unrecoverably wrong.
-    raise ValueError(intersection_err.format(hyperplane, polygon))
+    raise ValueError(intersection_err.format(hyperplane, polygon, intersections))
 
 def intersect_line_segment_with_hyperplane(I, H) -> list:
     """
@@ -54,8 +58,8 @@ def intersect_line_segment_with_hyperplane(I, H) -> list:
 
     pos = A @ v
     vel = A @ (u - v) # in dual line to {A = 0}
-    if pos == 0 and vel == 0: # I is contained in H
-        return list(I)
+    if vel == 0:
+        return [] # list(I) if pos == 0 else []
     t = -pos / vel
     if t > -ABS_TOL and t < 1 + ABS_TOL:
         return [t * I[0] + (1-t) * I[1]]

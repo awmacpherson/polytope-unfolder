@@ -66,3 +66,27 @@ def test_unfold():
 
         assert ( np.abs(net_face - tope_face) < ABS_TOL ).all()
         
+def test_unfold_with_meta():
+    P = Tope.from_vertices(v_3simplex)
+    hyperplanes = [(rng.normal(size=3), np.zeros(3))]
+    P.cut_2faces_with_hyperplanes( hyperplanes )
+    G = get_facet_graph(P)
+    T = G.get_spanning_tree()
+    N = Net(P, T)
+    N.unfold_with_metadata(meta_keys=["cuts"])
+
+    return
+    vertices = np.concatenate(list(N.facets.values()))
+    assert affine_span_dim(vertices) == P.dim - 1
+
+    N = N.in_own_span()
+    for _, v in N.facets.items():
+        assert v.shape[1] == P.dim - 1
+
+    for k, v in N.facets.items():
+        net_face = normalize_polygon(v)
+        logger.debug(f"Net face:\n{net_face}")
+        tope_face = normalize_polygon(P.get_facet(k).vertices)
+        logger.debug(f"Tope face: \n{tope_face}")
+
+        assert ( np.abs(net_face - tope_face) < ABS_TOL ).all()

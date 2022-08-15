@@ -37,6 +37,8 @@ import functools
 from typing import Callable
 
 class Net:
+    # TODO Replace tope in initializer with cells: list[Tope]
+    # and add classmethod from_tope(Tope, Graph)
     def __init__(self, P: Tope, T: Graph):
         self.tope: Tope = P
         self.tree: Graph = T # facet tree labelled by Pow(num_vertices)
@@ -64,7 +66,7 @@ class Net:
         start = self.tree.root if start is None else start
 
         for node in self.tree.children[start]:
-            self.unfold(start=node)
+            self.unfold_with_metadata(start=node, meta_keys = meta_keys)
 
             F0 = self.tope.faces[-1][start]
             F1 = self.tope.faces[-1][node]
@@ -97,8 +99,9 @@ class Net:
                 orientation=inward_normal
                 )
 
-        # TODO fix metadata transformations
-        
+        for key in meta_keys:
+            N.tope.apply_to(lambda x : (x - ref_pt) @ basis.T, key)
+
         # Need to reflect in one axis if orientation of root face is wrong.
 #        if np.linalg.det(np.c_[basis.T, inward_normal]) < 1:
 #            all_vertices[:,0] = -all_vertices[:,0]
@@ -119,40 +122,3 @@ class Net:
             self.apply_recurse(func, start=node)
     
         
-
-"""
-def affine_span(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    ""
-    Assume that A spans a codimension one affine subspace and 
-    that the ambient space has dimension at most 3.
-    This second assumption is necessary to conclude that *any* n vectors
-    span an (n-1)d affine hyperplane.
-    ""
-    N = A.shape[1]
-    
-    offset = np.sum(A[:N], axis=0) / N # do this to avoid divide by zero shenanigans
-    
-    A_lin = A[:N] - offset # linearise
-    eigval, eigvec = np.linalg.eig(A_lin) # complex dtype
-    logger.debug(f"Found eigenvalues {eigval} and eigenvectors {eigvec}")
-    i = np.abs(eigval).argmin()
-    if eigval[i] > FLOAT_ERR: # should get zero eigenvalue (+ floating point error)
-        raise Exception("Oh no! Input wasn't contained in a hyperplane!")
-    return eigvec[:,i].real, offset
-
-def sign(X, eq, offset) -> bool:
-    sgn = (X-offset) @ eq
-    if not ((sgn>-FLOAT_ERR).all() + (sgn<FLOAT_ERR).all()) % 2: raise
-    return (sgn>-FLOAT_ERR).all()
-
-def apply_refl(X: np.ndarray, eq, offset):
-    # X.shape = (N, 3)
-    # eq.shape = offset.shape = (3,)
-    # complains if X is rank one
-    # apparently has really bad error (3rd s.f.)
-    return X - np.tensordot(
-        2 * np.dot(X-offset, eq) / np.dot(eq, eq),
-        eq,
-        axes=0
-    )
-"""

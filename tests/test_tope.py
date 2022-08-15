@@ -16,11 +16,26 @@ def test_metadata():
     for k in range(len(Delta.faces)):
         for i in range(len(Delta.faces[k])):
             assert Delta.metadata[k][i]["pasta"] == i
-    
+
+    # Test preservation of metadata on get_face
     Gamma = Delta.get_face(0, 2)
     for k, k_faces in enumerate(Gamma.faces):
         for i in range(len(k_faces)):
             assert Delta.get_face(Gamma.metadata[k][i]["pasta"], k) == Gamma.get_face(i, k)
+
+    # Test apply_to
+    Delta.apply_to(lambda x : -x, "pasta")
+    for k in range(Delta.dim):
+        for i in range(len(Delta.faces[k])):
+            assert Delta.metadata[k][i]["pasta"] == -i
+
+    # with some entries missing..
+    for m in Delta.metadata[0]:
+        m.clear()
+    Delta.apply_to(lambda x : -x, "pasta")
+    for k in range(1, Delta.dim):
+        for i in range(len(Delta.faces[k])):
+            assert Delta.metadata[k][i]["pasta"] == i
 
 with open(POLYS_PATH) as fd:
     polys = json.load(fd)
@@ -129,6 +144,10 @@ def test_similarity():
 
 def test_cut_faces():
     P = Tope.from_vertices(v_3simplex)
+
+    # with empty list
+    P.cut_2faces_with_hyperplanes([])
+
     hyperplanes = [(rng.normal(size=3), np.array([a,a,a])) for a in np.arange(-1,1,.2)]
     P.cut_2faces_with_hyperplanes(hyperplanes)
     
