@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-numpy = "^1.22.3"
+numpy = "^1.17.5"
 polytope = "^0.2.3"
 pypoman = "^0.5.4"
 
