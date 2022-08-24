@@ -27,11 +27,11 @@ def test_intersect_line_segment_with_hyperplane():
     assert len(i) == 1
     assert np.abs(i[0][0] - 4) < ABS_TOL
 
-    # containment
+    # containment --- ignore
     seg[0][0] = 4
     seg[1][0] = 4
     i = intersect_line_segment_with_hyperplane(seg, hyperplane)
-    assert len(i) == 2
+    assert len(i) == 0
 
 def test_intersect_polygon_with_hyperplane():
     P = Tope.from_vertices(v_3simplex)

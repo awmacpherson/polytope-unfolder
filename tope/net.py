@@ -44,7 +44,7 @@ class Net:
         self.tree: Graph = T # facet tree labelled by Pow(num_vertices)
 
         # mutable
-        self.facets = {i: self.tope.vertices[list(T.node_labels[i])] for i in T.nodes}
+        self.facets = {i: self.tope.vertices[sorted(T.node_labels[i])] for i in T.nodes}
 
     def unfold(self, start = None): # modify facets dict in place
         start = self.tree.root if start is None else start
