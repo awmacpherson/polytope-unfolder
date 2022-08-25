@@ -8,15 +8,19 @@ from .orth import rotate_into_hyperplane, in_own_span, affine_span_dim
 FLOAT_ERR = 0.000001
 
 def get_facet_graph(P: Tope) -> Graph:
-    node_labels = dict(enumerate(P.faces[-1]))
+    node_labels = dict(enumerate(P.faces[P.dim-1]))
     return Graph.from_pairing(node_labels, P.interface, node_labels=node_labels)
 
+
+# DEPRECATED
 def put_in_own_span(N):
     """
     Reencode vertices in basis for their own affine span. Apply to unfolded net. 
     Orientation is normalised so that taking the inward-pointing normal as the 
     last basis vector for the ambient space is oriented w.r.t. the standard basis.
     """
+    raise Exception("Deprecated function.")
+
     root_facet = list(N.tope.faces[-1][N.tree.root])
     ref_pt = N.tope.vertices[root_facet].mean(axis=0)
     
@@ -32,6 +36,8 @@ def put_in_own_span(N):
     
     for i in N.facets:
         N.facets[i] = all_vertices[offsets[i]:offsets[i+1]]
+# /DEPRECATED
+
 
 import functools
 from typing import Callable
@@ -52,8 +58,8 @@ class Net:
         for node in self.tree.children[start]:
             self.unfold(start=node)
 
-            F0 = self.tope.faces[-1][start]
-            F1 = self.tope.faces[-1][node]
+            F0 = self.tope.faces[self.tope.dim-1][start]
+            F1 = self.tope.faces[self.tope.dim-1][node]
 
             rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
             for i in self.tree.iter_from(node):
@@ -68,8 +74,8 @@ class Net:
         for node in self.tree.children[start]:
             self.unfold_with_metadata(start=node, meta_keys = meta_keys)
 
-            F0 = self.tope.faces[-1][start]
-            F1 = self.tope.faces[-1][node]
+            F0 = self.tope.faces[self.tope.dim-1][start]
+            F1 = self.tope.faces[self.tope.dim-1][node]
 
             rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
             rotate = lambda x : ((x - offset) @ rotation) + offset
@@ -77,7 +83,8 @@ class Net:
             for i in self.tree.iter_from(node):
                 self.facets[i] = rotate(self.facets[i])
                 for k in meta_keys:
-                    self.tope.metadata[-1][i][k] = rotate(self.tope.metadata[-1][i][k])
+                    self.tope.metadata[self.tope.dim-1][i][k] = \
+                    rotate(self.tope.metadata[self.tope.dim-1][i][k])
 
         return self
 
@@ -87,7 +94,7 @@ class Net:
         Orientation is normalised so that taking the inward-pointing normal as the 
         last basis vector for the ambient space is oriented w.r.t. the standard basis.
         """
-        root_facet = list(N.tope.faces[-1][N.tree.root])
+        root_facet = list(N.tope.faces[N.tope.dim-1][N.tree.root])
         ref_pt = N.tope.vertices[root_facet].mean(axis=0)
         inward_normal = N.tope.vertices.mean(axis=0) - ref_pt
         

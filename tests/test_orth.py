@@ -78,8 +78,8 @@ import itertools
 
 def test_rotate():
     P = Tope.from_vertices(v_3simplex)
-    F0 = P.faces[-1][0]
-    F1 = P.faces[-1][1]
+    F0 = P.faces[P.dim-1][0]
+    F1 = P.faces[P.dim-1][1]
 
     rotation, offset = rotate_into_hyperplane(P.vertices, F0, F1)
     assert rotation.ndim == 2

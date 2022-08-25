@@ -42,7 +42,7 @@ def test_init():
     assert len(T.nodes) == len(G.nodes)
     N = Net(P, T)
     for i, facet in N.facets.items():
-        assert facet.shape == (len(P.faces[-1][i]), 4)
+        assert facet.shape == (len(P.faces[P.dim-1][i]), 4)
 
 def test_unfold():
     P = Tope.from_vertices(v_3simplex)
