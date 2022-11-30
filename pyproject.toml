@@ -2,7 +2,7 @@
 name = "tope"
 version = "0.2.0"
 description = "Do stuff with 4d polytopes"
-authors = ["Andrew <mail@awmacpherson.com>"]
+authors = ["Andrew W. Macpherson <mail@awmacpherson.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]

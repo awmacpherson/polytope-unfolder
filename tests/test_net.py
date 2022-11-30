@@ -73,7 +73,7 @@ def test_unfold_with_meta():
     G = get_facet_graph(P)
     T = G.get_spanning_tree()
     N = Net(P, T)
-    N.unfold_with_metadata(meta_keys=["cuts"])
+    N.unfold_with_meta(meta_keys=["cuts"])
 
     return
     vertices = np.concatenate(list(N.facets.values()))

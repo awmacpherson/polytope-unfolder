@@ -7,6 +7,7 @@ from .orth import rotate_into_hyperplane, in_own_span, affine_span_dim
 
 FLOAT_ERR = 0.000001
 
+# Move inside Tope class
 def get_facet_graph(P: Tope) -> Graph:
     node_labels = dict(enumerate(P.faces[P.dim-1]))
     return Graph.from_pairing(node_labels, P.interface, node_labels=node_labels)
@@ -42,6 +43,31 @@ def put_in_own_span(N):
 import functools
 from typing import Callable
 
+@dataclass
+class Net2:
+    tree:   Graph
+    cells:  dict[int, Tope]
+
+    @classmethod
+    def from_tope(cls, P: Tope):
+        tree = get_facet_graph(P).get_spanning_tree()
+        cells = {i: P.get_face(i) for i in tree.nodes}
+
+    def iter_cells(self): # needed?
+        return self.cells.values()
+
+    ### Iterators ###
+    
+    # These just concatenate iterators from each cell #
+
+    def iter_faces_as_vertices(self, dim=None): # may have repetitions
+        return (cell.vertices[idx] \
+                for cell in self.cells.values() \
+                for idx in cell.iter_faces(dim=dim))
+
+    def iter_meta(self, dim=None, key=None):
+        return (v for cell in self.cells.values() for v in cell.iter_meta(dim=dim, key=key))
+
 class Net:
     # TODO Replace tope in initializer with cells: list[Tope]
     # and add classmethod from_tope(Tope, Graph)
@@ -51,6 +77,11 @@ class Net:
 
         # mutable
         self.facets = {i: self.tope.vertices[sorted(T.node_labels[i])] for i in T.nodes}
+
+    @classmethod
+    def from_tope(cls, P: Tope):
+        T = get_facet_graph(F).get_spanning_tree()
+        return cls(P, T)
 
     def unfold(self, start = None): # modify facets dict in place
         start = self.tree.root if start is None else start
@@ -67,12 +98,12 @@ class Net:
 
         return self
 
-    def unfold_with_metadata(self, start = None, meta_keys = []): 
-        # as unfold(), but also modify in-place metadata with keys listed in decoration
+    def unfold_with_meta(self, start = None, meta_keys = []): 
+        # as unfold(), but also modify in-place meta with keys listed in decoration
         start = self.tree.root if start is None else start
 
         for node in self.tree.children[start]:
-            self.unfold_with_metadata(start=node, meta_keys = meta_keys)
+            self.unfold_with_meta(start=node, meta_keys = meta_keys)
 
             F0 = self.tope.faces[self.tope.dim-1][start]
             F1 = self.tope.faces[self.tope.dim-1][node]
@@ -83,8 +114,8 @@ class Net:
             for i in self.tree.iter_from(node):
                 self.facets[i] = rotate(self.facets[i])
                 for k in meta_keys:
-                    self.tope.metadata[self.tope.dim-1][i][k] = \
-                    rotate(self.tope.metadata[self.tope.dim-1][i][k])
+                    self.tope.meta[self.tope.dim-1][i][k] = \
+                    rotate(self.tope.meta[self.tope.dim-1][i][k])
 
         return self
 
