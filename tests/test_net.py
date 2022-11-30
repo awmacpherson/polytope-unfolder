@@ -42,7 +42,7 @@ def test_init():
     assert len(T.nodes) == len(G.nodes)
     N = Net(P, T)
     for i, facet in N.facets.items():
-        assert facet.shape == (len(P.faces[-1][i]), 4)
+        assert facet.shape == (len(P.faces[P.dim-1][i]), 4)
 
 def test_unfold():
     P = Tope.from_vertices(v_3simplex)
@@ -73,7 +73,7 @@ def test_unfold_with_meta():
     G = get_facet_graph(P)
     T = G.get_spanning_tree()
     N = Net(P, T)
-    N.unfold_with_metadata(meta_keys=["cuts"])
+    N.unfold_with_meta(meta_keys=["cuts"])
 
     return
     vertices = np.concatenate(list(N.facets.values()))

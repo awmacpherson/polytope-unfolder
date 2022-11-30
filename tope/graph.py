@@ -9,7 +9,7 @@ class Graph:
     nodes: set[int]
     node_labels: dict[int, Any]
     edge_labels: dict[tuple[int, int], Any] # include diagonal?
-    children: dict[int, set] # indices are elements of self.nodes
+    children: dict[int, set[int]] # indices are elements of self.nodes
 
     @classmethod
     def empty(cls):
