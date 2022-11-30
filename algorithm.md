@@ -4,7 +4,7 @@ A Python package for unfolding polytope nets.
 
 ## The problem
 
-Suppose we are given a polytope $\Delta$ in $n$ dimensions as a set $\mathrm{Vert}(\Delta)$ of vertices ($n$-vectors). By definition, a *net* for $\Delta$ is a tree $T$ together with a labelling of its nodes by:
+ Suppose we are given a polytope $\Delta$ in $n$ dimensions as a set $\mathrm{Vert}(\Delta)$ of vertices ($n$-vectors). By definition, a *net* for $\Delta$ is a tree $T$ together with a labelling of its nodes by:
 - Facets of $\Delta$ (bijectively);
 - A linear embedding of that facet into $\mathbb{R}^{n-1}$ (Euclidean $n-1$-space)
 
