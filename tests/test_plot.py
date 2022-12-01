@@ -38,6 +38,15 @@ def test_save_figs_to_dir(tmp_path):
     )
     assert os.path.exists("b/c/d.png")
 
+def test_copy_dir_to_zip(tmp_path):
+    os.chdir(tmp_path)
+    os.mkdir("a")
+    open("a/b", "w").close()
+    open("a/c", "w").close()
+
+    copy_dir_to_zip("a.zip", "a")
+    assert os.path.exists("a.zip")
+
 def test_save_figs_to_zip(tmp_path):
     fig, _ = plt.subplots()
     os.chdir(tmp_path)

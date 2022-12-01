@@ -7,6 +7,7 @@ from typing import Iterable
 from zipfile import ZipFile
 from tempfile import mkdtemp
 from shutil import rmtree
+from loguru import logger
 
 def save_figs_to_dir(
     figs: Iterable, 
@@ -72,6 +73,9 @@ def save_figs_to_zip(
         copy_dir_to_zip(path, tmpdir)
     rmtree(tmpdir)
 
+
+# mpl view box utility functions
+
 from matplotlib.transforms import Bbox
 
 def bounding_bbox(*arrays): # arrays
@@ -87,6 +91,7 @@ def plot_artists_in_view(
 ):
     fig, ax = plt.subplots()
     for ar in artists:
+        logger.debug(f"Adding artist {ar}.")
         ax.add_artist(ar)
     ax.dataLim = bbox
     ax.set_aspect(1)
