@@ -3,7 +3,7 @@ import numpy as np
 from loguru import logger
 from .graph import Graph
 from .tope import Tope
-from .orth import rotate_into_hyperplane, in_own_span, affine_span_dim
+from .orth import rotate_into_hyperplane, in_own_span, affine_span_dim, fold_into_hyperplane
 
 FLOAT_ERR = 0.000001
 
@@ -12,55 +12,59 @@ def get_facet_graph(P: Tope) -> Graph:
     node_labels = dict(enumerate(P.faces[P.dim-1]))
     return Graph.from_pairing(node_labels, P.interface, node_labels=node_labels)
 
-
-# DEPRECATED
-def put_in_own_span(N):
-    """
-    Reencode vertices in basis for their own affine span. Apply to unfolded net. 
-    Orientation is normalised so that taking the inward-pointing normal as the 
-    last basis vector for the ambient space is oriented w.r.t. the standard basis.
-    """
-    raise Exception("Deprecated function.")
-
-    root_facet = list(N.tope.faces[-1][N.tree.root])
-    ref_pt = N.tope.vertices[root_facet].mean(axis=0)
-    
-    offsets = [0] + [len(vertices) for vertices in N.facets.values()]
-    offsets = np.cumsum(offsets)
-    all_vertices = np.concatenate(list(N.facets.values()))
-    all_vertices, basis = in_own_span(all_vertices - ref_pt)
-                       
-    # Need to reflect in one axis if orientation of root face is wrong.
-    inward_normal = N.tope.vertices.mean(axis=0) - ref_pt
-    if np.linalg.det(np.c_[basis.T, inward_normal]) < 1:
-        all_vertices[:,0] = -all_vertices[:,0]
-    
-    for i in N.facets:
-        N.facets[i] = all_vertices[offsets[i]:offsets[i+1]]
-# /DEPRECATED
-
-
 import functools
 from typing import Callable
 
 @dataclass
 class Net2:
+    """
+    Wrapper class for a Graph with nodes labelled by Topes and edges labelled
+    by the intersections thereof.
+    """
     tree:   Graph
-    cells:  dict[int, Tope]
+
+    @property
+    def cells(self):
+        return self.tree.node_labels
 
     @classmethod
     def from_tope(cls, P: Tope):
         tree = get_facet_graph(P).get_spanning_tree()
         cells = {i: P.get_face(i) for i in tree.nodes}
 
-    def iter_cells(self): # needed?
-        return self.cells.values()
+    @property
+    def cell_dim(self):
+        """
+        Return dimension of an arbitrarily chosen cell.
+        Raise StopIterationError if there are no cells.
+        """
+        return self.cells.values().iter().next().dim
+
+    def unfold(self, start = None): # modify facets dict in place
+        start = self.tree.root if start is None else start
+
+        for node in self.tree.children[start]:
+            self.unfold(start=node)
+
+            F0 = self.cells[start]
+            F1 = self.cells[node]
+            vertices = np.concatenate([F0.vertices, F1.vertices])
+
+            #rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
+            rotation, offset = fold_into_hyperplane(self.tope.vertices, F0, F1)
+            for i in self.tree.iter_from(node):
+                self.facets[i] = ((self.facets[i] - offset) @ rotation) + offset
+
+        return self
 
     ### Iterators ###
     
+    def iter_cells(self): # needed?
+        return self.cells.values()
+
     # These just concatenate iterators from each cell #
 
-    def iter_faces_as_vertices(self, dim=None): # may have repetitions
+    def iter_faces(self, dim=None, yield_as="vertices"): # may have repetitions
         return (cell.vertices[idx] \
                 for cell in self.cells.values() \
                 for idx in cell.iter_faces(dim=dim))
@@ -92,7 +96,8 @@ class Net:
             F0 = self.tope.faces[self.tope.dim-1][start]
             F1 = self.tope.faces[self.tope.dim-1][node]
 
-            rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
+            rotation, offset = fold_into_hyperplane(self.tope.vertices, F0, F1)
+            #rotation, offset = rotate_into_hyperplane(self.tope.vertices, F0, F1)
             for i in self.tree.iter_from(node):
                 self.facets[i] = ((self.facets[i] - offset) @ rotation) + offset
 
@@ -132,6 +137,7 @@ class Net:
         offsets = [0] + [len(vertices) for vertices in N.facets.values()]
         offsets = np.cumsum(offsets)
         all_vertices = np.concatenate(list(N.facets.values()))
+        logger.debug(f"vertices shape: {all_vertices.shape}")
         all_vertices, basis = in_own_span(
                 all_vertices - ref_pt, 
                 orientation=inward_normal

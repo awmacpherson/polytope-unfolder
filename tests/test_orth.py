@@ -3,9 +3,77 @@ from tope.tope import Tope
 from loguru import logger
 from tests import v_3simplex, normalize_polygon
 
-rng = np.random.default_rng()
+rng = np.random.default_rng(seed=999)
 
 ABS_TOL = 1e-6
+
+def test_find_basis_in():
+    b = find_basis_in(np.array([
+        [0,0]
+    ]))
+    assert len(b) == 0
+    b = find_basis_in(np.array([
+        [0,1,0],
+        [0,-5,0],
+        [1,0,0]
+    ]))
+    assert len(b) == 2
+    assert b[1][0] == 1
+
+def test_find_basis_for_row_space():
+    b = find_basis_for_row_space(np.array([
+        [0,1,0],
+        [0,-5,0],
+        [1,0,0]
+    ]))
+    assert len(b) == 2
+
+def test_fold_matrix_2d():
+    v = rng.random(size=2) 
+    R = fold_matrix_2d(v)
+    assert (np.abs(R @ R.T - np.eye(2)) < ABS_TOL).all()
+    assert np.linalg.matrix_rank(np.stack([np.array([1,0]) @ R, v])) == 1
+
+def test_fold_matrix():
+    v = rng.normal(size=4,loc = 2)
+    w = rng.normal(size=4, loc = (-1,-1,-1,2))
+    axis = np.array([
+        [1,0,0,0],
+        [0,0,1,0]
+    ])
+    R = fold_matrix(axis, w, v)
+    assert (np.abs(R@R.T - np.eye(4)) < ABS_TOL).all()
+    v = v @ R
+    assert np.linalg.matrix_rank(np.stack([
+        axis[0], 
+        axis[1],
+        v,
+        w
+        ])) == 3
+    # v points away from w
+    assert np.dot(v,w) < 0
+
+def random_orth(N):
+    q, _ = np.linalg.qr(rng.normal(size=(N,N)))
+    return q
+
+def test_extend_to_orth_basis():
+    Q = random_orth(5)[:3]
+    A = extend_to_orthonormal_basis(Q)
+    assert (A @ A.T - np.eye(5) < ABS_TOL ).all()
+
+def test_angle_between():
+    v1 = np.array([1,0])     # v2 \
+    v2 = np.array([-1,1])    #     *-- v1
+    v3 = np.array([-1,-1])   # v3 /
+    _, cos, sin = angle_between(v1, v2)
+    assert cos < 0 and sin > 0
+    _, cos, sin = angle_between(v1, v2, complement=True)
+    assert cos > 0 and sin < 0
+    _, cos, sin = angle_between(v1, v3)
+    assert cos < 0 and sin < 0
+    _, cos, sin = angle_between(v1, v3, complement=True)
+    assert cos > 0 and sin > 0
 
 def test_intersect_line_segment_with_hyperplane():
     hyperplane = (np.array([1,0,0]), np.array([4,3,3]))
@@ -82,6 +150,7 @@ def test_rotate():
     F1 = P.faces[P.dim-1][1]
 
     rotation, offset = rotate_into_hyperplane(P.vertices, F0, F1)
+    rotation, offset = fold_into_hyperplane(P.vertices, F0, F1)
     assert rotation.ndim == 2
     assert rotation.shape[0] == rotation.shape[1] == P.dim
 

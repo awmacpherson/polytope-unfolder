@@ -43,7 +43,7 @@ class Tope:
 
     ### ITERATORS ###
 
-    def iter_faces(self, dim=None) -> Iterable[set[int]]:
+    def iter_faces(self, dim=None, yield_as="vertices") -> Iterable[set[int]]:
         """
         Return iterable over faces as sets of integer indices.
         If dim is None, iterate over faces of all dimensions.
@@ -59,7 +59,7 @@ class Tope:
         raise NotImplementedError
 
     def iter_faces_as_vertices(self, dim=None) -> Iterable[np.ndarray]: 
-        #used to get edges for final plot
+        # used to get edges for final plot
         return map(lambda l: self.vertices[l], map(sorted, self.iter_faces(dim=dim)))
 
     def iter_meta(self, dim=None, key=None): # used in apply_to_meta()
@@ -170,40 +170,26 @@ class Tope:
 
         return Q
 
-# DEPRECATED
-    def get_face2(self, i, k=-1):
+
+    def get_face_with_remap(self, i, k=-1):
         """
         Returns a Tope object consisting of all subfaces of a given face.
         Metadata is preserved. Makes no guarantees about orientation. 
         """
         k = self.dim + k if k < 0 else k
-        target_face:   set[int]    = self.faces[k][i]
-        main_l: list[int]   = sorted(target_face) # sorted list of indices into self.vertices
-        # main_l: range(len(target_face)) -> range(len(tope))
+        target_face:        set[int]    = self.faces[k][i]
+        target_face_idx:    list[int]   = sorted(target_face)
 
-        vertices:   np.ndarray = self.vertices[main_l] # vertices of face
+        vertices:   np.ndarray = self.vertices[target_face_idx] # vertices of face
 
-        # note: [[]] * N creates a list of N references to the same underlying list!
-        # So we have to use this list comprehension.
-        faces:  list[list[int]]             = [[] for _ in self.faces[:k]]
-        meta:   list[list[dict[str, Any]]]  = [[] for _ in self.faces[:k]]
+        Q = Tope(vertices, None, None)
 
-        for j, all_j_faces in enumerate(self.faces[:k]):
-            for n, face in enumerate(all_j_faces):
-                if face.issubset(target_face):
-                    # convert indices into range(len(tope)) 
-                    # to indices into range(len(target_face))
-                    faces[j].append(set([main_l.index(v) for v in face]))
+        for j, i, face, meta in self.enumerate_all_faces_meta():
+            if face.issubset(target_face):
+                Q.faces[j].append( { target_face_idx.index(v) for v in face } )
+                remap = index_like(Q)
 
-                    # (deep) copy meta
-                    # deep copy is necessary here; otherwise updating meta for 
-                    # face also changes it for the parent
-                    # TODO: make deep copying optional
-                    meta[j] .append(deepcopy(self.meta[j][n]))
-
-        return Tope(vertices, faces, meta)
-# /DEPRECATED
-
+        return Q
 
     def __eq__(self, other):
         return (self.vertices == other.vertices).all() and self.faces == other.faces\
@@ -230,7 +216,16 @@ class Tope:
         
         return P
 
-    def interface(self, i, j):
+    def interface(self, i, j, return_as="set") -> set:
+        """
+        Return the intersection of two facets if codimension two or None.
+        Used in get_facet_graph.
+        """
+        s = set.intersection(self.faces[self.dim-1][i], self.faces[self.dim-1][j])
+        #logger.debug(f"Found intersection {s}.")
+        return s if s in self.faces[self.dim-2] else None
+
+    def interface2(self, i, j, return_as="set"): # return Tope
         """
         Return the intersection of two facets if codimension two or None.
         Used in get_facet_graph.

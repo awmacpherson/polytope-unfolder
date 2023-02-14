@@ -6,6 +6,9 @@ Graph=None
 
 @dataclass
 class Graph:
+    """
+    Simple directed graph type with labelled edges and nodes.
+    """
     nodes: set[int]
     node_labels: dict[int, Any]
     edge_labels: dict[tuple[int, int], Any] # include diagonal?
