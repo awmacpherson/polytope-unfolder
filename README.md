@@ -64,8 +64,10 @@ There are many ways to do this, and the method we choose will control the "layou
 ### The **Unfolding**
 
 We now have the data of a `Net` object, which is essentially that of the tree constructed in the previous step together with:
+
 - nodes labelled by `Tope` objects constructed from the corresponding facets.
 - edges labelled by the sets of indices that define the intersection $k-2$-cell.
+
 We now need to "unfold" this net so that it fits into 3D. We achieve this by starting at the outermost leaves of our tree and working inwards, as we go applying rotations to get the descendants of a given facet into the same hyperplane as that face.
 
 This procedure is implemented by the function `N.unfold()`, where `N` is a `Net` object.
