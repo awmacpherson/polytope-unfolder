@@ -29,6 +29,36 @@ def test_join_with():
     assert len(G.children[3]) == 1
     assert G.edge_labels[(3,5)] == "WUT"
 
+def test_width_first_spanning_tree():
+    G = Graph.from_pairing(range(0,5), pairing(edges_1))
+    G.join_with(
+        Graph.from_pairing(range(5,7), pairing(edges_2)),
+        at=(2,5)
+    )
+
+    T = G.width_first_spanning_tree(root=0)
+
+    assert hasattr(T, 'root')
+    assert T.nodes == set(range(7)).difference({3})
+    for i in T.nodes:
+        for j in T.nodes:
+            assert not (i in T.children[j] and j in T.children[i])
+
+
+    def collect(start, into):
+        for i in T.children[start]:
+            into.append(i)
+            collect(i, into)
+
+    l = [0]
+    collect(0, l)
+    assert len(l) == len(T.nodes) 
+    # every node other than root appears exactly once as a child
+    # TODO: test unique path from root to child
+
+    T = Graph.empty().get_spanning_tree()
+    assert T == Graph.empty()
+
 def test_spanning_tree():
     G = Graph.from_pairing(range(0,5), pairing(edges_1))
     G.join_with(

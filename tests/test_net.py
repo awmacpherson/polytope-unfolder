@@ -1,8 +1,7 @@
 from tope import *
 from tope.net import *
-from tests import v_4simplex as simplex, v_3simplex, normalize_polygon
+from tests import v_4simplex as simplex, v_3simplex, normalize_polygon, POLYS_PATH
 
-POLYS_PATH = "polys.json"
 import json
 from loguru import logger
 
@@ -37,56 +36,44 @@ rng = default_rng()
 
 def test_init():
     P = Tope.from_vertices(simplex)
-    G = get_facet_graph(P)
+    G = P.facet_graph()
     T = G.get_spanning_tree()
     assert len(T.nodes) == len(G.nodes)
     N = Net(P, T)
+
     for i, facet in N.facets.items():
-        assert facet.shape == (len(P.faces[P.dim-1][i]), 4)
+        assert facet == P.get_face(i)
+#        assert facet.shape == (len(P.faces[P.dim-1][i]), 4)
 
 def test_unfold():
     P = Tope.from_vertices(v_3simplex)
-    G = get_facet_graph(P)
+    G = P.facet_graph()
     T = G.get_spanning_tree()
     N = Net(P, T)
     N.unfold()
 
-    vertices = np.concatenate(list(N.facets.values()))
+    vertices = np.concatenate([F.vertices for F in N.facets.values()])
     assert affine_span_dim(vertices) == P.dim - 1
 
     N = N.in_own_span()
     for _, v in N.facets.items():
-        assert v.shape[1] == P.dim - 1
+        assert v.vertices.shape[1] == P.dim - 1
 
     for k, v in N.facets.items():
-        net_face = normalize_polygon(v)
+        net_face = normalize_polygon(v.vertices)
         logger.debug(f"Net face:\n{net_face}")
         tope_face = normalize_polygon(P.get_facet(k).vertices)
         logger.debug(f"Tope face: \n{tope_face}")
 
         assert ( np.abs(net_face - tope_face) < ABS_TOL ).all()
         
+
 def test_unfold_with_meta():
     P = Tope.from_vertices(v_3simplex)
     hyperplanes = [(rng.normal(size=3), np.zeros(3))]
     P.cut_2faces_with_hyperplanes( hyperplanes )
-    G = get_facet_graph(P)
+    G = P.facet_graph()
     T = G.get_spanning_tree()
     N = Net(P, T)
     N.unfold_with_meta(meta_keys=["cuts"])
 
-    return
-    vertices = np.concatenate(list(N.facets.values()))
-    assert affine_span_dim(vertices) == P.dim - 1
-
-    N = N.in_own_span()
-    for _, v in N.facets.items():
-        assert v.shape[1] == P.dim - 1
-
-    for k, v in N.facets.items():
-        net_face = normalize_polygon(v)
-        logger.debug(f"Net face:\n{net_face}")
-        tope_face = normalize_polygon(P.get_facet(k).vertices)
-        logger.debug(f"Tope face: \n{tope_face}")
-
-        assert ( np.abs(net_face - tope_face) < ABS_TOL ).all()

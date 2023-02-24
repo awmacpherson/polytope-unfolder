@@ -2,6 +2,14 @@
 
 A Python package for unfolding polytope nets.
 
+## Getting the polytope data
+
+Run the following command (from the root directory):
+```sh
+bin/get-polys.py $NUM_POLYS > data/$FILENAME
+```
+where `$NUM_POLYS` is the desired number of polytopes. Jupyter notebooks default to retrieving polytope data by scraping the `./data` directory for JSON files.
+
 ## The problem
 
 Suppose we are given a polytope $\Delta$ in $n$ dimensions as a set $\mathrm{Vert}(\Delta)$ of vertices ($n$-vectors). By definition, a *net* for $\Delta$ is a tree $T$ together with a labelling of its nodes by:

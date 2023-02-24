@@ -11,6 +11,7 @@ from typing import Any, Iterable
 from copy import deepcopy
 
 from .orth import *
+from .graph import Graph
 
 def eliminate_repetitions(l: list[set]):
     popidx = []
@@ -171,6 +172,8 @@ class Tope:
         return Q
 
 
+# DEPRECATED
+
     def get_face_with_remap(self, i, k=-1):
         """
         Returns a Tope object consisting of all subfaces of a given face.
@@ -190,6 +193,8 @@ class Tope:
                 remap = index_like(Q)
 
         return Q
+
+# /DEPRECATED
 
     def __eq__(self, other):
         return (self.vertices == other.vertices).all() and self.faces == other.faces\
@@ -225,14 +230,15 @@ class Tope:
         #logger.debug(f"Found intersection {s}.")
         return s if s in self.faces[self.dim-2] else None
 
-    def interface2(self, i, j, return_as="set"): # return Tope
+    def facet_graph(self) -> Graph:
         """
-        Return the intersection of two facets if codimension two or None.
-        Used in get_facet_graph.
+        Return an intersection graph of facets with nodes labelled by the
+        corresponding Tope objects and edges by sets of indices into 
+        self.vertices.
         """
-        s = set.intersection(self.faces[self.dim-1][i], self.faces[self.dim-1][j])
-        #logger.debug(f"Found intersection {s}.")
-        return s if s in self.faces[self.dim-2] else None
+        nodes = range(len(self.faces[self.dim - 1]))
+        node_labels = {i: self.get_face(i, k=self.dim-1) for i in nodes}
+        return Graph.from_pairing(nodes, self.interface, node_labels=node_labels)
 
     def save_index(self, key = "index"):
         """
@@ -250,17 +256,6 @@ class Tope:
         for meta in self.iter_meta():
             if key in meta:
                 meta[key] = transform(meta[key])
-
-# DEPRECATED
-    def apply_to2(self, transform, key):
-        """
-        Apply transform to all meta entries under key.
-        """
-        for k in range(self.dim):
-            for i in range(len(self.faces[k])):
-                if key in self.meta[k][i]:
-                    self.meta[k][i][key] = transform(self.meta[k][i][key])
-# /DEPRECATED
 
 # move outside class
 

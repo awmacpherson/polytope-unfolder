@@ -270,7 +270,7 @@ def fold_into_hyperplane(vertices, F0, F1) -> np.ndarray:
     x_v = x_l.mean(axis=0)
 
     axis = find_basis_for_row_space(around - offset)
-    M = fold_matrix(axis, into_v, x_v, unfold=True)
+    M = fold_matrix(axis, into_v, x_v)
     return M, offset
 
 # DEPRECATE

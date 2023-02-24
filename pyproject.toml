@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tope"
-version = "0.2.0"
+version = "0.3.0"
 description = "Do stuff with 4d polytopes"
 authors = ["Andrew W. Macpherson <mail@awmacpherson.com>"]
 license = "MIT"

@@ -1,11 +1,9 @@
 from tope import *
 from tope.orth import ABS_TOL, angle_between
 from tope.net import get_facet_graph
-from tests import normalize_polygon, v_24cell, v_4simplex, v_3simplex
+from tests import normalize_polygon, v_24cell, v_4simplex, v_3simplex, POLYS_PATH
 
 
-
-POLYS_PATH = "polys.json"
 import json
 from loguru import logger
 from numpy.random import default_rng; rng = default_rng()
