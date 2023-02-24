@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "tope"
-version = "0.3.0"
+version = "0.3.2"
 description = "Do stuff with 4d polytopes"
 authors = ["Andrew W. Macpherson <mail@awmacpherson.com>"]
 license = "MIT"
+readme = "README.md"
+
+[tool.poetry.scripts]
+tope-get = "tope.pcas:__main__"
 
 [tool.poetry.dependencies]
 python = "^3.7"

@@ -15,7 +15,7 @@ v_24cell = [
     [1, 1, -1, -1], [-1, -1, 1, 1]
 ]
 
-POLYS_PATH = "data/polys2.json"
+POLYS_PATH = "tests/polys.json"
 
 from tope.orth import angle_between, ABS_TOL
 import numpy as np

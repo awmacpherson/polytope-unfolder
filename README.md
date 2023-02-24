@@ -4,11 +4,13 @@ A Python package for unfolding polytope nets.
 
 ## Getting the polytope data
 
-Run the following command (from the root directory):
+WARNING: This script currently does not work because the link to the polytope database is broken.
+
+Run the following command after installing:
 ```sh
-bin/get-polys.py $NUM_POLYS > data/$FILENAME
+tope-get $NUM_POLYS > $FILENAME.json
 ```
-where `$NUM_POLYS` is the desired number of polytopes. Jupyter notebooks default to retrieving polytope data by scraping the `./data` directory for JSON files.
+where `$NUM_POLYS` is the desired number of polytopes and $FILENAME is the desired filename. 
 
 ## The problem
 
@@ -21,15 +23,6 @@ and a labelling of edges by $(n-2)$-faces such that
 - If a pair of facets overlap, their intersection is exactly one face.
 - If a pair of facets overlap in codimension one (i.e. in an $(n-2)$-face), then the corresponding nodes of $T$ are connected by an edge labelled by this face.
 
-
-### What kind of projection?
-
-We need to make some decisions about what kind of structure our projections and unfolding transformations are going to preserve. They should certainly be linear; they could also preserve the integral structure or be an orthogonal projection.
-
-The important thing for the actual underlying mathematical objects is the integral structure. Strictly preserving this won't necessarily lead to nice models.
-
-The coordinate system we use to define orthogonal projection, on the other hand, is fairly arbitrary from a mathematical perspective. However, it may be more visually satisfying and also be easier to construct nets whose facets are approximately "round" (as opposed to extremely elongated or pointy). This seems best ensured by paying attention to metric properties of the projection and reflections. 
-
 ## The algorithm
 
 We can extract a "net" in $(n-1)$ dimensions as follows:
@@ -41,48 +34,38 @@ We can extract a "net" in $(n-1)$ dimensions as follows:
 
 ### Computing the set of faces.
 
-This process is probably already implemented in Magma, but I did this in Python so I had to write my own thing (which seems faster than learning Magma). The current algo is as follows:
+The first thing we need to do is compute the combinatorics of faces of the polytope from the set of vertices. This process is probably already implemented in Magma, but it seemed simpler to implement my own thing in Python than to learn Magma. 
 
-1. Compute the set of facets. There are two approaches for this:
-   - Compute the set of supporting hyperplanes for the polytope, that is, the dual representation. There are ready-made packages for this; I used a Python wrapper of the `qhull` algorithm. This loses the integral structure.
-   - Find all maximal extremal sets of vertices. This seems like a potentially better approach but I haven't implemented it yet.
-2. For $k=n-1,n-2,\ldots,1$, do the following:
+The current algo is as follows:
+
+1. Compute the set of facets. For this we use the [`pypoman`](https://pypi.org/project/pypoman) library to find a set of supporting hyperplanes, then intersect these with the vertex set to find the combinatorial facets. 
+2. For $k=n-2,n-3,\ldots,1$, do the following:
    - Record all pairwise intersections of $k$-faces with facets, skipping degenerate cases where the $k$-face is contained in the facet.
    - Iterate over the resulting list and remove all items that are contained in another item.
    - Save what's left as the list of $(k-1)$-faces.
 
+This algorithm is implemented in the `Tope.from_vertices(v)` method, which accepts a 2D `numpy` array whose rows are interpreted as the vertices and returns a Tope object, which records the vertices together with the combinatorics of faces as sets of indices into `v`.
+
 ### Computing the incidence graph
 
-This step is easy: iterate over all tuples of two facets and a codimension two face and see if they are incident. 
+This step is easy: iterate over all pairs of facets and see if they intersect in a codimension two face. 
 
 The incidence graph should be represented in a form optimised for constructing a spanning tree. The set of vertices is given by the previous step: it is the set of facets. Then we can do an exhaustive iteration to construct a mapping `vertices => set_of_neighbours`.
 
+This step is implemented with the function `P.facet_graph()`, which returns a `Graph` object.
+
 ### Constructing a spanning tree
 
-Another easy step. There's an algorithm for this.
+There are many ways to do this, and the method we choose will control the "layout" of the nets we produce. This package includes two algorithms:
+
+- `Graph.get_spanning_tree()` implements a depth-first iteration. This produces "long" nets.
+- `Graph.width_first_spanning_tree()`, as its name suggests, implements a width-first iteration. This produces "splayed out" nets.
 
 ### The **Unfolding**
 
-Project our polytope into 3d. We now have a mapping from facets to polyhedra embedded in 3d, but they overlap, so we need to "unfold" them. We achieve this by picking a starting facet (labelled by the root of our spanning tree) and working our way out along the branches, checking at each node to see if the corresponding facet is "folded" and applying a reflection if so.
+We now have the data of a `Net` object, which is essentially that of the tree constructed in the previous step together with:
+- nodes labelled by `Tope` objects constructed from the corresponding facets.
+- edges labelled by the sets of indices that define the intersection $k-2$-cell.
+We now need to "unfold" this net so that it fits into 3D. We achieve this by starting at the outermost leaves of our tree and working inwards, as we go applying rotations to get the descendants of a given facet into the same hyperplane as that face.
 
-Let's make this a bit more precise. An edge of the incidence graph is labelled by two facets $F_1,F_2$ (which each label an end of that edge) of $\Delta$ and a common face $G=F_1\cap F_2$. If we are dealing with an edge from the spanning tree, then the root gives us an orientation of the edge (pointing away from the root); we make the convention that $F_1$ corresponds to the "parent" node and $F_2$ to the "child". Call these data an *incidence*.
-
-The codimension two face $G$ spans an $(n-2)$-dimensional affine subspace $\langle G\rangle_\mathbb{R}$ in $\R^{n-1}$. This affine subspace is computed by solving an underdetermined matrix equation which gives us a defining function (covector) and an offset. Because it is a real hyperplane, it separates $\R^{n-1}$ into two components. The incidence $(F_1,F_2,G)$ is said to be *folded* if $F_1$ and $F_2$ are in the same component, i.e. they are on the "same side" of $\langle G\rangle_\R$.
-
-To *unfold* a folded incidence, we reflect $F_2$ in the hyperplane $\langle G\rangle_\R$. To define a reflection, we need the hyperplane plus a normal vector. For this normal vector we could compute the orthogonal, but it seems easier and not obviously worse to just transpose the defining equation of the hyperplane.
-
-So we are going to need library functions:
-```
-function affine_span(G: Face) -> (eq: float[3], offset: float)
-function is_folded(F_1: Facet, F_2: Facet, G: Face) -> bool
-function get_reflection(eq: float[3], offset: float) -> (lin: float[3,3], translation: float[3])
-```
-
-These reflections stack, so the actual algorithm is as follows:
-1. For each node $p$ of $\Gamma$, walk from $\mathrm{root}(\Gamma)$ to $p$ and construct a sequence of affine transformations of length $d(\mathrm{root},p)$ where the transformation associated to an incidence $(F_1,F_2,G)$ is:
-```
-get_reflection(affine_span(G)) if is_folded(F_1, F_2, G) else Identity
-```
-2. Compose the embedding with the composite of these reflections (root-first order) to obtain our net.
-
-This algorithm is most simply implemented with depth-first iteration, passing the sequence of reflections down the call stack.
+This procedure is implemented by the function `N.unfold()`, where `N` is a `Net` object.
