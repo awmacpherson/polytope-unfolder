@@ -1,4 +1,4 @@
-import polytope, numpy as np
+import numpy as np
 from pypoman import compute_polytope_halfspaces
 
 #import networkx as nx
