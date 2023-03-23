@@ -154,7 +154,7 @@ def find_basis_for_row_space(A: np.ndarray) -> np.ndarray:
     Return orthonormal basis for span of row space of A.
     """
     q, r = np.linalg.qr(A.T)
-    print(r)
+    #print(r)
     mask = (np.abs(r) > ABS_TOL).any(axis=1)
     return q.T[mask]
 
