@@ -10,10 +10,12 @@ readme = "README.md"
 tope-get = "tope.pcas:__main__"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 numpy = "^1.17.5"
 pypoman = "^0.5.4"
 loguru = "^0.5"
+scipy = "^1.9.2"
+matplotlib = "^3.5.1"
 
 [tool.poetry.dev-dependencies]
 
