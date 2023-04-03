@@ -4,9 +4,29 @@ from loguru import logger
 import itertools
 
 ABS_TOL = 1e-6
+ORTH_RNG = np.random.default_rng()
 
 intersection_err = "Got more than 2 endpoints when intersecting " +\
         "{} with {}.\nIntersections: {}\nI need help sorting this out!"
+
+# Projections
+
+def perspective_project(v: np.ndarray, offset: float):
+    """
+    Convention: project into hyperplane (v[0]=0) translated by offset.
+    - v: float[M,N]
+    - offset: float
+    """
+    return v[:,...,1:] / (v[:,...,:1] - offset)
+
+# Random orthogonal matrices
+
+def random_orth(N: int, rng: np.random._generator.Generator = ORTH_RNG) -> np.ndarray:
+    """
+    Uniform random element of O(N) with positive diagonal entries sampled using Haar measure.
+    """
+    Q,R = np.linalg.qr(rng.normal(size=(N,N))) # project GL(N) -> O(N)
+    return Q @ np.diag(np.sign(np.diag(R)))    # fix signs
 
 # Intersections
 
