@@ -2,6 +2,16 @@
 
 A Python package for unfolding polytope nets.
 
+## Installation
+
+If you are on a Mac (with an Arm CPU) you need to install this package with
+
+```sh
+pip3 install --no-binary cvxopt [-e] .
+```
+
+(because PyPI doesn't list an Arm binary for the cvxopt package).
+
 ## Getting the polytope data
 
 WARNING: This script currently does not work because the link to the polytope database is broken.

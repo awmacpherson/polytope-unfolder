@@ -27,4 +27,4 @@ tope-get = "tope.pcas:__main__"
 pythonpath = ["."]
 
 [tool.setuptools]
-packages = [tope]
+packages = ["tope"]
