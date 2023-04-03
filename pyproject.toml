@@ -19,9 +19,36 @@ matplotlib = "^3.5.1"
 
 [tool.poetry.dev-dependencies]
 
+
+[tool.pdm]
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[project]
+authors = [
+    {name = "Andrew W. Macpherson", email = "mail@awmacpherson.com"},
+]
+requires-python = ">=3.8,<4.0"
+dependencies = [
+    "numpy<2.0.0,>=1.17.5",
+    "pypoman<1.0.0,>=0.5.4",
+    "loguru<1.0,>=0.5",
+    "scipy<2.0.0,>=1.9.2",
+    "matplotlib<4.0.0,>=3.5.1",
+    "jupyter>=1.0.0",
+    "numpy-stl>=3.0.1",
+]
+name = "tope"
+version = "0.3.2"
+description = "Do stuff with 4d polytopes"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.urls]
+
+[project.scripts]
+tope-get = "tope.pcas:__main__"
