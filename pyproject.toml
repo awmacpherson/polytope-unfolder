@@ -26,3 +26,5 @@ tope-get = "tope.pcas:__main__"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 
+[tool.setuptools]
+packages = [tope]
