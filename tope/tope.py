@@ -63,6 +63,10 @@ class Tope:
         # used to get edges for final plot
         return map(lambda l: self.vertices[l], map(sorted, self.iter_faces(dim=dim)))
 
+    def iter_faces_as_arrays(self, dim=None) -> Iterable[np.ndarray]: 
+        # used to get edges for final plot
+        return map(lambda l: self.vertices[l], map(sorted, self.iter_faces(dim=dim)))
+
     def iter_meta(self, dim=None, key=None): # used in apply_to_meta()
         if dim is None: return self.iter_all_meta(key)# iterate over faces of all dims
         if key is None: return self.meta[dim if dim >= 0 else self.dim-dim]
@@ -86,6 +90,16 @@ class Tope:
     def enumerate_all_faces_meta(self): # used in get_face
         return ((n, i, face, self.meta[n][i]) \
                 for n, i, face in self.enumerate_all_faces())
+
+    def triangulate(self) -> Iterable[np.ndarray]:
+        """
+        Returns iterator yielding triangles in a triangulation of all 2-faces.
+        """
+        if self.dim != 3:
+            raise ValueError("Can only triangulate a 3d polytope.")
+        for face in self.iter_faces_as_arrays(2):
+            for i in range(len(face)-2):
+                yield face[i:i+3]
 
     @classmethod
     def from_vertices(cls, vertices):
@@ -154,13 +168,16 @@ class Tope:
     def get_face(self, i, k=-1):
         """
         Returns a Tope object consisting of all subfaces of a given face.
+        A new array is allocated to hold the vertices.
         Metadata is preserved. Makes no guarantees about orientation. 
         """
         k = self.dim + k if k < 0 else k
         target_face:        set[int]    = self.faces[k][i]
         target_face_idx:    list[int]   = sorted(target_face)
 
-        vertices:   np.ndarray = self.vertices[target_face_idx] # vertices of face
+        vertices: np.zeros(len(target_face), self.dim)
+        vertices[:,:] = self.vertices[target_face_idx] 
+        # use l-value indexing to ensure values are copied
 
         Q = Tope(vertices, None, None)
 
