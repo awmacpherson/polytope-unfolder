@@ -112,11 +112,11 @@ def test_save_figs_to_zip_overwrite(tmp_path):
 def test_bbox():
     a = [[-1,-1], [0,-1], [-1,0]]
     b = [[1,0.5], [-0.5,1]]
-    c = bounding_bbox(a,b)
+    c = bounding_bbox_from_arrays(a,b)
     assert c.x0 == -1 and c.x1 == 1 and c.y0 == -1 and c.y1 == 1
 
 def test_plot_artists_in_view():
-    c = Bbox.from_extents(-1,-1,1,1)
+    c = mpl.transforms.Bbox.from_extents(-1,-1,1,1)
     fig, ax = plot_artists_in_view(bbox=c, margin=0.1)
     b = ax.viewLim
     assert b.x0 == -1.2 and b.x1 == 1.2 and b.y0 == -1.2 and b.y1 == 1.2

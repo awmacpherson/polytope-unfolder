@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib.collections import LineCollection
 from matplotlib.text import Text, Annotation
 
@@ -8,6 +9,32 @@ from zipfile import ZipFile
 from tempfile import mkdtemp
 from shutil import rmtree
 from loguru import logger
+
+# Axis prep
+
+def bounding_bbox_from_arrays(*arrays): # arrays
+    box = mpl.transforms.Bbox.null()
+    for array in arrays:
+        box.update_from_data_xy(array, ignore=False)
+    return box
+
+def get_tightbbox(*things):
+    bboxes = [thing.get_tightbbox() for thing in things]
+    return mpl.transforms.Bbox.union(bboxes)
+
+def configure_axes(ax: mpl.axes.Axes, bg="black", border=False):
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+    ax.set_yticks([])
+    ax.set_yticklabels([])
+
+    if not border:
+        ax.spines[:].set_visible(False)
+
+    ax.set_facecolor(bg)
+    ax.set_aspect("equal")
+
+    return ax
 
 # File operations
 
@@ -76,19 +103,9 @@ def save_figs_to_zip(
     rmtree(tmpdir)
 
 
-# mpl view box utility functions
-
-from matplotlib.transforms import Bbox
-
-def bounding_bbox(*arrays): # arrays
-    box = Bbox.null()
-    for array in arrays:
-        box.update_from_data_xy(array, ignore=False)
-    return box
-
 def plot_artists_in_view(
     *artists,
-    bbox: Bbox = Bbox.null(),
+    bbox: mpl.transforms.Bbox = mpl.transforms.Bbox.null(),
     margin: float = 0.05
 ):
     fig, ax = plt.subplots()
@@ -138,4 +155,3 @@ def new_color_mapped_line_collection(lines: Iterable[np.ndarray], cmap: str) -> 
     n = len(lines)
     color = (cmap( i/len(lines) ) for i in range(n))
     return LineCollection(*lines, color=color)
-

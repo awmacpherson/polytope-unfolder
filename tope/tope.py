@@ -175,7 +175,7 @@ class Tope:
         target_face:        set[int]    = self.faces[k][i]
         target_face_idx:    list[int]   = sorted(target_face)
 
-        vertices: np.zeros(len(target_face), self.dim)
+        vertices = np.zeros((len(target_face), self.dim), float)
         vertices[:,:] = self.vertices[target_face_idx] 
         # use l-value indexing to ensure values are copied
 

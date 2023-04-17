@@ -17,7 +17,7 @@ def perspective_project(v: np.ndarray, offset: float):
     - v: float[M,N]
     - offset: float
     """
-    return v[:,...,1:] / (v[:,...,:1] - offset)
+    return v[:,...,1:] * offset / (v[:,...,:1] - offset)
 
 # Random orthogonal matrices
 
@@ -27,6 +27,30 @@ def random_orth(N: int, rng: np.random._generator.Generator = ORTH_RNG) -> np.nd
     """
     Q,R = np.linalg.qr(rng.normal(size=(N,N))) # project GL(N) -> O(N)
     return Q @ np.diag(np.sign(np.diag(R)))    # fix signs
+
+# ND rotations
+
+def rotator_nd(theta: np.ndarray, N: int = 2):
+    """
+    Form ND rotation matrix in first 2 indices for stacked N-vectors. 
+    theta must be a sized (i.e. non-scalar) array.
+    """
+    theta = np.array(theta) # in case theta is a plain float
+    a, b = np.cos(theta), np.sin(theta)
+    R = np.tensordot(np.ones(theta.shape), np.eye(N), axes=0)
+    R[...,0,0] = a
+    R[...,0,1] = b
+    R[...,1,0] = -b
+    R[...,1,1] = a
+    return R
+
+def generate_rotations(v: np.ndarray, num_steps: int = 10) -> np.ndarray:
+    """
+    Generate num_steps evenly spaced rotations of stacked vectors.
+    """
+    N = v.shape[1]
+    theta = np.arange(0, 2*np.pi, 2*np.pi / num_steps)
+    return np.einsum("jk, ikl -> ijl", v, rotator_nd(theta, N))
 
 # Intersections
 
