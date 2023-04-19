@@ -1,5 +1,7 @@
 # Tope.py
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/awmacpherson/polytope-unfolder/HEAD?labpath=notebooks%2Fcombined.ipynb)
+
 A Python package for unfolding polytope nets.
 
 ## Installation
