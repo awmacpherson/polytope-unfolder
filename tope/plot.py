@@ -39,16 +39,16 @@ def configure_axes_3d(ax: mpl.axes.Axes, triangles, bg="black", border=False):
     return ax
 
 def configure_axes(ax: mpl.axes.Axes, bg="black", border=False):
-    #ax.set_xticks([])
-    #ax.set_xticklabels([])
-    #ax.set_yticks([])
-    #ax.set_yticklabels([])
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+    ax.set_yticks([])
+    ax.set_yticklabels([])
 
-    #if not border:
-    #    ax.spines[:].set_visible(False)
+    if not border:
+        ax.spines[:].set_visible(False)
 
     limits = ax.axis("scaled")
-    ax.set_axis_off()
+    #ax.set_axis_off() # This turns off the background patch too
     ax.set_facecolor(bg)
 
     return ax
