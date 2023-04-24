@@ -12,6 +12,7 @@ from copy import deepcopy
 
 from .orth import *
 from .graph import Graph
+from .net import Net
 
 def eliminate_repetitions(l: list[set]):
     popidx = []
@@ -56,8 +57,9 @@ class Tope:
     def iter_all_faces(self) -> Iterable[set[int]]:
         return (face for n_faces in self.faces for face in n_faces)
 
-    def iter_faces_as_topes(self, dim=None):
-        raise NotImplementedError
+    def iter_faces_as_topes(self, dim=-1):
+        dim = self.dim + dim if dim < 0 else dim
+        return (self.get_face(i, dim) for i in range(len(self.faces[dim])))
 
     def iter_faces_as_vertices(self, dim=None) -> Iterable[np.ndarray]: 
         # used to get edges for final plot
@@ -273,6 +275,9 @@ class Tope:
         for meta in self.iter_meta():
             if key in meta:
                 meta[key] = transform(meta[key])
+
+    def net(self, depth_first=False):
+        return Net(self, self.facet_graph().width_first_spanning_tree())
 
 # move outside class
 

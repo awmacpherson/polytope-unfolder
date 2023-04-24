@@ -2,13 +2,12 @@ from dataclasses import dataclass
 import numpy as np
 from loguru import logger
 from .graph import Graph
-from .tope import Tope
 from .orth import rotate_into_hyperplane, in_own_span, affine_span_dim, fold_into_hyperplane
 
 FLOAT_ERR = 0.000001
 
 # Move inside Tope class
-def get_facet_graph(P: Tope) -> Graph:
+def get_facet_graph(P) -> Graph:
     """
     Create Graph object with nodes 0, ..., #{facets of P} and edges labelled
     by the intersection of two facets, considered as a set of indices into
@@ -33,7 +32,7 @@ class Net2:
         return self.tree.node_labels
 
     @classmethod
-    def from_tope(cls, P: Tope):
+    def from_tope(cls, P):
         tree = P.facet_graph().get_spanning_tree()
         return cls(P, tree)
 
@@ -80,15 +79,21 @@ class Net2:
 class Net:
     # TODO Replace tope in initializer with cells: list[Tope]
     # and add classmethod from_tope(Tope, Graph)
-    def __init__(self, P: Tope, T: Graph):
-        self.tope: Tope = P
+    def __init__(self, P, T: Graph):
+        self.tope = P
         self.tree: Graph = T # facet tree labelled by Pow(num_vertices)
 
         # mutable mapping of Topes
         self.facets = T.node_labels
 
+    def iter_faces_as_arrays(self, dim):
+        return (face for facet in self.facets.values() for face in facet.iter_faces_as_arrays(dim))
+
+    def iter_edges_as_arrays(self):
+        return self.iter_faces(1)
+
     @classmethod
-    def from_tope(cls, P: Tope):
+    def from_tope(cls, P):
         T = P.facet_graph().get_spanning_tree()
         return cls(P, T)
 
