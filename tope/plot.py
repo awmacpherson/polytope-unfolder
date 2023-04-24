@@ -22,19 +22,51 @@ def get_tightbbox(*things):
     bboxes = [thing.get_tightbbox() for thing in things]
     return mpl.transforms.Bbox.union(bboxes)
 
-def configure_axes(ax: mpl.axes.Axes, bg="black", border=False):
-    ax.set_xticks([])
-    ax.set_xticklabels([])
-    ax.set_yticks([])
-    ax.set_yticklabels([])
+def configure_axes_3d(ax: mpl.axes.Axes, triangles, bg="black", border=False):
+    """
+    Set explicit limits, 1:1 aspect ratio, turn off axes, and set background
+    colour on a 3d Axes object.
+    (Note that autoscaling doesn't work here, so explicit data is needed.)
+    """
+    ax.set_xlim(triangles[:,:,0].min(), triangles[:,:,0].max())
+    ax.set_ylim(triangles[:,:,1].min(), triangles[:,:,1].max())
+    ax.set_zlim(triangles[:,:,2].min(), triangles[:,:,2].max())
 
-    if not border:
-        ax.spines[:].set_visible(False)
-
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_axis_off()
     ax.set_facecolor(bg)
-    ax.set_aspect("equal")
 
     return ax
+
+def configure_axes(ax: mpl.axes.Axes, bg="black", border=False):
+    #ax.set_xticks([])
+    #ax.set_xticklabels([])
+    #ax.set_yticks([])
+    #ax.set_yticklabels([])
+
+    #if not border:
+    #    ax.spines[:].set_visible(False)
+
+    limits = ax.axis("scaled")
+    ax.set_axis_off()
+    ax.set_facecolor(bg)
+
+    return ax
+
+def plot_artists_in_view(
+    *artists,
+    bbox: mpl.transforms.Bbox = mpl.transforms.Bbox.null(),
+    margin: float = 0.05
+):
+    # fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_axes((0,0,1,1))
+    for ar in artists:
+        ax.add_artist(ar)
+    ax.dataLim = bbox
+    configure_axes(ax)
+    return fig, ax
+
 
 # File operations
 
@@ -102,22 +134,6 @@ def save_figs_to_zip(
         copy_dir_to_zip(path, tmpdir)
     rmtree(tmpdir)
 
-
-def plot_artists_in_view(
-    *artists,
-    bbox: mpl.transforms.Bbox = mpl.transforms.Bbox.null(),
-    margin: float = 0.05
-):
-    fig, ax = plt.subplots()
-    for ar in artists:
-        logger.debug(f"Adding artist {ar}.")
-        ax.add_artist(ar)
-    ax.dataLim = bbox
-    ax.set_aspect(1)
-    ax.set_xmargin(margin)
-    ax.set_ymargin(margin)
-    ax.autoscale()
-    return fig, ax
 
 # Artist construction
 
