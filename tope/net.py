@@ -90,7 +90,13 @@ class Net:
         return (face for facet in self.facets.values() for face in facet.iter_faces_as_arrays(dim))
 
     def iter_edges_as_arrays(self):
-        return self.iter_faces(1)
+        """
+        Iterate over all edges of all cells in a form that can be consumed by
+        mpl.collections.LineCollection.
+        """
+        return self.iter_faces_as_arrays(1)
+
+    iter_edges = iter_edges_as_arrays
 
     @classmethod
     def from_tope(cls, P):

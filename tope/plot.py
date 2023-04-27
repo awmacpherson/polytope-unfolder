@@ -53,6 +53,11 @@ def configure_axes(ax: mpl.axes.Axes, bg="black", border=False):
 
     return ax
 
+def save_subplot(fig, ax, path, **kwargs):
+    pixels_to_inches = fig.dpi_scale_trans.inverted()
+    bbox_inches = ax.get_window_extent().transformed(pixels_to_inches)
+    fig.savefig(path, bbox_inches=bbox_inches, **kwargs)
+
 def plot_artists_in_view(
     *artists,
     bbox: mpl.transforms.Bbox = mpl.transforms.Bbox.null(),
