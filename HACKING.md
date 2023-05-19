@@ -40,13 +40,11 @@ You can test notebooks in the virtual environment with `pdm run juypter notebook
 Notebooks on the mybinder.org portal run in a conda environment.
 
 ## Test + deploy process
-1. Run pytest (not needed if you only changed the notebook).
-2. Test the notebook (run all cells).
+1. Run `tox run`. (Get comfortable as this can take a while.)
 3. Commit + push to GitHub.
 4. Load combined.ipynb on mybinder.org and do one full runthrough.
 
 Don't forget to add your name to the authors list in `pyproject.toml` when you make your first contribution!
 
 Ideas to improve this process:
-1. Add an integration test (using tox?) to automate test runs of the notebook.
-2. Have these tests triggered by git hooks so testing happens automatically on commit.
+1. Have these tests triggered by git hooks so testing happens automatically on commit.
