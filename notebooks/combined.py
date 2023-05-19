@@ -64,16 +64,18 @@ import matplotlib.pyplot as plt
 import json, os
 import itertools
 
+DATA_DIR = os.environ.get("POLYTOPE_UNFOLDER_DATA_DIRECTORY") or "../data"
+
 # import prepackaged data
-with open("../data/polys2.json") as fd: 
+with open(os.path.join(DATA_DIR, "polys2.json")) as fd: 
     polys = json.load(fd)
     
 # and the rest
 import gzip
-with gzip.open("../data/474polys.json.gz", "rt") as fd:
+with gzip.open(os.path.join(DATA_DIR, "474polys.json.gz"), "rt") as fd:
     polys.update(json.load(fd))
 
-with gzip.open("../data/d30.json.gz", "rt") as fd:
+with gzip.open(os.path.join(DATA_DIR, "d30.json.gz"), "rt") as fd:
     d30 = json.load(fd)
 polys.update({f"d30-{record['ID']}": record["Vertices"] for record in d30})
 
