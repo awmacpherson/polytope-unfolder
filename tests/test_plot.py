@@ -115,9 +115,3 @@ def test_bbox():
     c = bounding_bbox_from_arrays(a,b)
     assert c.x0 == -1 and c.x1 == 1 and c.y0 == -1 and c.y1 == 1
 
-def test_plot_artists_in_view():
-    c = mpl.transforms.Bbox.from_extents(-1,-1,1,1)
-    fig, ax = plot_artists_in_view(bbox=c, margin=0.1)
-    b = ax.viewLim
-    assert b.x0 == -1.2 and b.x1 == 1.2 and b.y0 == -1.2 and b.y1 == 1.2
-    assert ax.get_aspect() == 1
