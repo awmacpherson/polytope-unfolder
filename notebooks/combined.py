@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.6
 #   kernelspec:
-#     display_name: crungulus
+#     display_name: poly-unfolder
 #     language: python
-#     name: crungulus
+#     name: python3
 # ---
 
 # %% [markdown]
@@ -207,6 +207,9 @@ TAG            = "" # put nonempty string here to add custom text to filenames
 ROTATION_AXIS = "diagonal"    # "standard" or "diagonal" or "random"
 PROJECTION = "obverse" # "lateral" or "obverse" or "mixed" or "random"
 
+ANIMATION_FPS = 20 # frame per seconds in the animation
+ANIMATION_LENGTH_SECS = 3 # total length of the animation in seconds
+
 
 # don't change ##################
 SAVE_DIRECTORY = os.environ.get("POLYTOPE_UNFOLDER_OUTPUT_DIRECTORY") or "output"
@@ -287,7 +290,7 @@ fig, _ = plot_wireframe(get_wireframe(P, Q4b), border=True, color_map = "Spectra
 fig.set_size_inches(10,10)
 
 # %%
-frames = get_frames(P, Q4a, Q4b, num_steps=100)
+frames = get_frames(P, Q4a, Q4b, num_steps=ANIMATION_LENGTH_SECS*ANIMATION_FPS)
 bbox = get_tightbbox(*frames) # must compute before adding artists to axes!
 
 fig, ax = plt.subplots()
@@ -310,7 +313,7 @@ fig.savefig(os.path.join(DIR_SMEARED, f"{POLYTOPE}-{TAG}.png"), dpi=DPI)
 # save animation
 from matplotlib.animation import ArtistAnimation
 os.makedirs(DIR_ANIMATION, exist_ok=True)
-animation = ArtistAnimation(fig, [[frame] for frame in frames], interval=1000/60)
+animation = ArtistAnimation(fig, [[frame] for frame in frames], interval=1000/ANIMATION_FPS)
 animation.save(os.path.join(DIR_ANIMATION, f"{POLYTOPE}-{TAG}.mp4"), dpi=ANIMATION_DPI)
 
 # %% [markdown]
