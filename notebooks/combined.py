@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.6
+#       jupytext_version: 1.14.7
 #   kernelspec:
-#     display_name: poly-unfolder
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -49,7 +49,11 @@ import sys, os
 
 # IMPORTS
 sys.path.append("..")
-from tope import Tope
+try:
+    from tope import Tope
+except ImportError:
+    # !{sys.executable} -m pip install ..
+    from tope import Tope
 from tope.net import *
 from tope.orth import *
 from tope.graph import Graph
