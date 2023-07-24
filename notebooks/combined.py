@@ -2,6 +2,7 @@
 # jupyter:
 #   jupytext:
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: jupytext
 #     text_representation:
 #       extension: .py
 #       format_name: percent
@@ -52,7 +53,7 @@ sys.path.append("..")
 try:
     from tope import Tope
 except ImportError:
-    # !{sys.executable} -m pip install ..
+    # # !{sys.executable} -m pip install ..
     from tope import Tope
 from tope.net import *
 from tope.orth import *
@@ -205,6 +206,7 @@ PERSPECTIVE_DISTANCE = 10
 DPI           = 300
 ANIMATION_DPI = 150
 
+IMAGE_FORMAT   = "svg" # or "svg" or whatever
 TAG            = "" # put nonempty string here to add custom text to filenames
                     # otherwise a new tag will be generated every time this cell is run
 
@@ -312,7 +314,7 @@ TAG = get_tag()
 
 # save smear
 os.makedirs(DIR_SMEARED, exist_ok=True)
-fig.savefig(os.path.join(DIR_SMEARED, f"{POLYTOPE}-{TAG}.png"), dpi=DPI) 
+fig.savefig(os.path.join(DIR_SMEARED, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # save animation
 from matplotlib.animation import ArtistAnimation
@@ -352,7 +354,7 @@ fig.set_size_inches(20,20)
 TAG = get_tag()
 
 os.makedirs(DIR_NET_PROJECTION, exist_ok=True)
-fig.savefig(os.path.join(DIR_NET_PROJECTION, f"{POLYTOPE}-{TAG}.png"), dpi=DPI)
+fig.savefig(os.path.join(DIR_NET_PROJECTION, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # %% [markdown]
 # ## STL
@@ -395,7 +397,7 @@ ax = configure_axes_3d(ax, thing.vectors, bg=BG_COLOR)
 TAG = get_tag()
 
 os.makedirs(DIR_SHADED_3D_NET, exist_ok=True)
-fig.savefig(os.path.join(DIR_SHADED_3D_NET, f"{POLYTOPE}-{TAG}.png"), dpi=DPI)
+fig.savefig(os.path.join(DIR_SHADED_3D_NET, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # %% [markdown]
 # # 2d nets
@@ -435,4 +437,6 @@ os.makedirs(DIR_2D, exist_ok=True)
 savedir = os.path.join(DIR_2D, f"{POLYTOPE}-{TAG}")
 os.makedirs(savedir, exist_ok=True)
 for n, ax in enumerate(axs):
-    save_subplot(fig, ax, os.path.join(savedir, f"{n}.png"), dpi=DPI)
+    save_subplot(fig, ax, os.path.join(savedir, f"{n}.{IMAGE_FORMAT}"), dpi=DPI)
+
+# %%

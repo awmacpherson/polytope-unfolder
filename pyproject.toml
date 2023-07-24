@@ -11,7 +11,7 @@ dependencies = [
     "matplotlib<4.0.0,>=3.5.1",
     "jupyter>=1.0.0",
     "numpy-stl>=3.0.1",
-    "jupytext>=1.14.7",
+    "jupytext==1.14.7",
 ]
 name = "tope"
 version = "0.4"
@@ -34,3 +34,7 @@ pythonpath = ["."]
 
 [tool.setuptools]
 packages = ["tope"]
+
+[tool.jupytext]
+formats = "ipynb,py:percent"
+notebook_metadata_filter="jupytext"
