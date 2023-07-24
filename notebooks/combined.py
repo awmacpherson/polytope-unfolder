@@ -53,7 +53,7 @@ sys.path.append("..")
 try:
     from tope import Tope
 except ImportError:
-    # # !{sys.executable} -m pip install ..
+    # !{sys.executable} -m pip install ..
     from tope import Tope
 from tope.net import *
 from tope.orth import *
