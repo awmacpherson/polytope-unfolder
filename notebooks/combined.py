@@ -84,6 +84,9 @@ with gzip.open(os.path.join(DATA_DIR, "d30.json.gz"), "rt") as fd:
     d30 = json.load(fd)
 polys.update({f"d30-{record['ID']}": record["Vertices"] for record in d30})
 
+with open(os.path.join(DATA_DIR, "20s.json")) as fd:
+    polys.update(json.load(fd))
+
 logger.remove()
 
 
