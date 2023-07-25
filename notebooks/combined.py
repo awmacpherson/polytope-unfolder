@@ -2,15 +2,16 @@
 # jupyter:
 #   jupytext:
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: jupytext
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.7
 #   kernelspec:
-#     display_name: crungulus
+#     display_name: Python 3 (ipykernel)
 #     language: python
-#     name: crungulus
+#     name: python3
 # ---
 
 # %% [markdown]
@@ -49,7 +50,11 @@ import sys, os
 
 # IMPORTS
 sys.path.append("..")
-from tope import Tope
+try:
+    from tope import Tope
+except ImportError:
+    # !{sys.executable} -m pip install ..
+    from tope import Tope
 from tope.net import *
 from tope.orth import *
 from tope.graph import Graph
@@ -201,11 +206,15 @@ PERSPECTIVE_DISTANCE = 10
 DPI           = 300
 ANIMATION_DPI = 150
 
+IMAGE_FORMAT   = "svg" # or "svg" or whatever
 TAG            = "" # put nonempty string here to add custom text to filenames
                     # otherwise a new tag will be generated every time this cell is run
 
 ROTATION_AXIS = "diagonal"    # "standard" or "diagonal" or "random"
 PROJECTION = "obverse" # "lateral" or "obverse" or "mixed" or "random"
+
+ANIMATION_FPS = 20 # frame per seconds in the animation
+ANIMATION_LENGTH_SECS = 3 # total length of the animation in seconds
 
 
 # don't change ##################
@@ -287,7 +296,7 @@ fig, _ = plot_wireframe(get_wireframe(P, Q4b), border=True, color_map = "Spectra
 fig.set_size_inches(10,10)
 
 # %%
-frames = get_frames(P, Q4a, Q4b, num_steps=100)
+frames = get_frames(P, Q4a, Q4b, num_steps=ANIMATION_LENGTH_SECS*ANIMATION_FPS)
 bbox = get_tightbbox(*frames) # must compute before adding artists to axes!
 
 fig, ax = plt.subplots()
@@ -305,12 +314,12 @@ TAG = get_tag()
 
 # save smear
 os.makedirs(DIR_SMEARED, exist_ok=True)
-fig.savefig(os.path.join(DIR_SMEARED, f"{POLYTOPE}-{TAG}.png"), dpi=DPI) 
+fig.savefig(os.path.join(DIR_SMEARED, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # save animation
 from matplotlib.animation import ArtistAnimation
 os.makedirs(DIR_ANIMATION, exist_ok=True)
-animation = ArtistAnimation(fig, [[frame] for frame in frames], interval=1000/60)
+animation = ArtistAnimation(fig, [[frame] for frame in frames], interval=1000/ANIMATION_FPS)
 animation.save(os.path.join(DIR_ANIMATION, f"{POLYTOPE}-{TAG}.mp4"), dpi=ANIMATION_DPI)
 
 # %% [markdown]
@@ -345,7 +354,7 @@ fig.set_size_inches(20,20)
 TAG = get_tag()
 
 os.makedirs(DIR_NET_PROJECTION, exist_ok=True)
-fig.savefig(os.path.join(DIR_NET_PROJECTION, f"{POLYTOPE}-{TAG}.png"), dpi=DPI)
+fig.savefig(os.path.join(DIR_NET_PROJECTION, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # %% [markdown]
 # ## STL
@@ -388,7 +397,7 @@ ax = configure_axes_3d(ax, thing.vectors, bg=BG_COLOR)
 TAG = get_tag()
 
 os.makedirs(DIR_SHADED_3D_NET, exist_ok=True)
-fig.savefig(os.path.join(DIR_SHADED_3D_NET, f"{POLYTOPE}-{TAG}.png"), dpi=DPI)
+fig.savefig(os.path.join(DIR_SHADED_3D_NET, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # %% [markdown]
 # # 2d nets
@@ -428,4 +437,6 @@ os.makedirs(DIR_2D, exist_ok=True)
 savedir = os.path.join(DIR_2D, f"{POLYTOPE}-{TAG}")
 os.makedirs(savedir, exist_ok=True)
 for n, ax in enumerate(axs):
-    save_subplot(fig, ax, os.path.join(savedir, f"{n}.png"), dpi=DPI)
+    save_subplot(fig, ax, os.path.join(savedir, f"{n}.{IMAGE_FORMAT}"), dpi=DPI)
+
+# %%

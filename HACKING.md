@@ -25,7 +25,9 @@ The dependencies are nearly all very standard libraries used in data science or 
 
 Consists of the file `notebooks/combined.ipynb`. Other notebooks are older stuff that should be deleted once I'm sure we got everything worth salvaging from there. 
 
-The animation export in combined.ipynb requires `ffmpeg`.
+This repo uses the Jupyter plugin [Jupytext](https://jupytext.readthedocs.io) to maintain an ordinary Python script `notebooks/combined.py`. It has the same functionality as the notebook but can be passed directly to the Python interpreter. This is used by the integration test `tests/run_notebook.py`. During development in the Jupyter web UI, you should have Jupytext installed and the "paired percent script" option checked in the UI to ensure that jupyter automatically updates `combined.py` when you save.
+
+The animation export in combined.ipynb requires `ffmpeg`. The integration test `tests/run_notebook.py` will fail if this is not installed.
 
 To avoid having to debug local environment issues, one can run the notebook on `mybinder.org`, a public BinderHub instance that pulls in notebooks from a GitHub repo. (This is useful for users but not ideal for testing as one must commit + push changes before they are visible to the server.)
 
@@ -41,8 +43,8 @@ Notebooks on the mybinder.org portal run in a conda environment.
 
 ## Test + deploy process
 1. Run `tox run`. (Get comfortable as this can take a while.)
-3. Commit + push to GitHub.
-4. Load combined.ipynb on mybinder.org and do one full runthrough.
+2. Commit + push to GitHub.
+3. Load combined.ipynb on mybinder.org and do one full runthrough.
 
 Don't forget to add your name to the authors list in `pyproject.toml` when you make your first contribution!
 
