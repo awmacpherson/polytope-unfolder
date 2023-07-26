@@ -1,4 +1,4 @@
-from tope.stl import create_stl
+from tope.stl import create_stl_walls
 from tope.tope import Tope
 
 def test_stl():
@@ -8,5 +8,5 @@ def test_stl():
         [-1,1,1],   [-1,1,-1],
         [-1,-1,1,], [-1,-1,-1]
     ])
-    m = create_stl(cube)
+    m = create_stl_walls(cube)
     assert m.check()
