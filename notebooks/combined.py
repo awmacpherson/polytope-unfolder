@@ -219,6 +219,9 @@ PROJECTION = "obverse" # "lateral" or "obverse" or "mixed" or "random"
 ANIMATION_FPS = 20 # frame per seconds in the animation
 ANIMATION_LENGTH_SECS = 3 # total length of the animation in seconds
 
+STL_THICKNESS = 15 # thickness of frame for stl with wireframe in mm
+STL_BOX_SIZE = 1000 # side of box which countains the stl with wireframe in mm (rough estimate)
+
 
 # don't change ##################
 SAVE_DIRECTORY = os.environ.get("POLYTOPE_UNFOLDER_OUTPUT_DIRECTORY") or "output"
@@ -361,13 +364,50 @@ fig.savefig(os.path.join(DIR_NET_PROJECTION, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}")
 
 # %% [markdown]
 # ## STL
-# Export as STL
+# Export as STL (wireframe)
 
 # %%
 TAG = get_tag()
 
-from tope.stl import create_stl
-thing = create_stl(*N.facets.values())
+from tope.stl import create_stl_from_net, stl_dimensions, define_scale
+from math import sqrt
+
+SCALE = define_scale(N, STL_BOX_SIZE, STL_THICKNESS)
+
+t = sqrt((STL_THICKNESS/SCALE)**2/2)
+
+thing = create_stl_from_net(N, t, walls=False)
+assert thing.check()
+
+thing.vectors = SCALE*thing.vectors
+
+os.makedirs(DIR_STL, exist_ok=True)
+thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}-wireframe.stl"))
+
+# Print the dimensions
+stl_dimensions(thing)
+
+# %% [markdown]
+# X-ray STL plot
+
+# %%
+import mpl_toolkits.mplot3d as mpl3d
+
+ar = mpl3d.art3d.Poly3DCollection(thing.vectors, lightsource=mpl.colors.LightSource(),facecolors='w', linewidths=1, alpha = 0.1)
+fig = plt.figure(dpi=DPI)
+ax = fig.add_subplot(projection='3d')
+ax.add_artist(ar)
+
+ax = configure_axes_3d(ax, thing.vectors, bg=BG_COLOR)
+
+# %% [markdown]
+# Export as STl (walls)
+
+# %%
+TAG = get_tag()
+
+from tope.stl import create_stl_from_net
+thing = create_stl_from_net(N, STL_THICKNESS, walls=True)
 assert thing.check()
 
 os.makedirs(DIR_STL, exist_ok=True)
