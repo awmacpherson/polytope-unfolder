@@ -482,4 +482,18 @@ os.makedirs(savedir, exist_ok=True)
 for n, ax in enumerate(axs):
     save_subplot(fig, ax, os.path.join(savedir, f"{n}.{IMAGE_FORMAT}"), dpi=DPI)
 
+# %% [markdown]
+# ## Save bundle
+#
+# Run this cell once to bundle all outputs together for download!
+# Note that it will overwrite previous runs.
+
+# %%
+import zipfile
+
+with zipfile.ZipFile(f"{SAVE_DIRECTORY}.zip", "w") as ziph:
+    for d, _, file_l in os.walk(SAVE_DIRECTORY):
+        for f in file_l:
+            ziph.write(os.path.join(d,f))
+
 # %%
