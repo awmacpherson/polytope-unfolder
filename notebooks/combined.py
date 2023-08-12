@@ -483,6 +483,130 @@ for n, ax in enumerate(axs):
     save_subplot(fig, ax, os.path.join(savedir, f"{n}.{IMAGE_FORMAT}"), dpi=DPI)
 
 # %% [markdown]
+# ## Labels and mirror images
+
+# %%
+import matplotlib
+MARGIN_FACTOR = 0.05
+
+def get_net_for_facet(P: Tope, i: int, keys=[]) -> Net:
+    P.save_index()
+    F = P.get_facet(i, meta_keys=keys)
+    N = F.net().unfold_with_meta(meta_keys=keys).in_own_span(meta_keys=keys)
+    return N
+
+FacetLabels = list[tuple[str, np.ndarray]] # label, position
+EdgeList = list[np.ndarray] # list of 2xdim arrays
+
+def get_facet_labels(N: Net) -> FacetLabels:
+    labels = []
+    for i, x in N.facets.items():
+        vertices = x.vertices
+        labels.append((N.tope.meta[N.tope.dim-1][i]["index"], vertices.mean(axis=0)))
+    return labels
+
+def get_edges(N: Net) -> EdgeList: # apply to unfolded Net
+    edges = []
+    for i, x in N.facets.items():
+        vertices = x.vertices
+        facet_template = N.tope.get_face(i) # has correct indices
+        edges.extend((vertices[list(e)] for e in facet_template.faces[1]))
+    return edges
+
+def plot_nets(
+    nets: list, 
+    name: str = "P", 
+    margin: float = MARGIN_FACTOR, 
+    label_config: dict = {"fontsize": 5, "ha": "center", "va": "center"},
+    title_config: dict = {"fontsize": 5, "pad": -14},
+    label = True, 
+    mirror = False
+):    
+    # Compute common bounding box
+    bbox = bounding_bbox_from_arrays(*(cell .vertices for N in nets for cell in N.facets.values()))
+     
+    # List of figures
+    figs = []
+
+    # Generate images
+    for i, N in enumerate(nets):
+
+        # Define artists
+        artists = [LineCollection(get_edges(N), colors="white", linewidths=0.2)]    
+        
+        # Add labels
+        if label: 
+            artists.extend(Text(*pos, text=str(l), **label_config, color = 'white') for l, pos in get_facet_labels(N))
+        
+        # Draw the actual picture
+        fig, ax = plot_artists_in_view(*artists, bbox = bbox, margin = margin)
+        
+        facet_name = f"{name}-facet-{i}"
+        if mirror:
+            facet_name = facet_name+"-mirror"
+        if label:
+            facet_name = facet_name+"-labels"
+        
+        # title with "default" positioning
+        ax.set_title(facet_name, **title_config)
+
+        # If mirror, mirror with respect to the x-axis
+        if mirror:
+            ax.invert_xaxis()
+                
+        # store and next()
+        figs.append((facet_name, fig))
+        matplotlib.pyplot.close()
+    
+    return figs
+
+nfacets = len(P.faces[P.dim-1])
+# Get the facet nets
+nets = [get_net_for_facet(P, i) for i in range(nfacets)]
+
+# No labels no mirror
+figs_nl_nm = plot_nets(nets, mirror = False, label = False)
+
+# Labels no mirror
+figs_l_nm = plot_nets(nets, mirror = False, label = True)
+
+# Labels mirror
+figs_l_m = plot_nets(nets, mirror = True, label = True)
+
+# No labels mirror
+figs_nl_m = plot_nets(nets, mirror = True, label = False)
+
+
+# %% [markdown]
+# ### Preview
+
+# %%
+i = 0 # change this for different examples
+
+display(figs_nl_nm[i][1])
+display(figs_l_nm[i][1])
+display(figs_nl_m[i][1])
+display(figs_l_m[i][1])
+
+# %% [markdown]
+# ### Save zip
+
+# %%
+from tope.plot import save_figs_to_zip # THIS TAKES A LITTLE TIME
+TAG = get_tag()
+
+os.makedirs(DIR_2D, exist_ok=True)
+
+savedir = os.path.join(DIR_2D, f"{POLYTOPE}-{TAG}")
+os.makedirs(savedir, exist_ok=True)
+
+save_figs_to_dir(figs_nl_nm, directory = savedir+'_nolabel_nomirror', force=True)
+save_figs_to_dir(figs_l_nm, directory = savedir+'_label_nomirror', force=True)
+save_figs_to_dir(figs_l_m, directory = savedir+'_label_mirror', force=True)
+save_figs_to_dir(figs_nl_m, directory = savedir+'_nolabel_mirror', force=True)
+
+
+# %% [markdown]
 # ## Save bundle
 #
 # Run this cell once to bundle all outputs together for download!
