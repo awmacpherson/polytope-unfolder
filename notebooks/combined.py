@@ -7,9 +7,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.7
+#       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -87,6 +87,9 @@ polys.update({f"d30-{record['ID']}": record["Vertices"] for record in d30})
 with open(os.path.join(DATA_DIR, "20s.json")) as fd:
     polys.update(json.load(fd))
 
+with open(os.path.join(DATA_DIR, "10s-short.json")) as fd:
+    polys.update(json.load(fd))
+    
 logger.remove()
 
 
@@ -197,7 +200,7 @@ mpl.colormaps.get(PREVIEW_COLOR_SCHEME)
 # # Parameters
 
 # %%
-POLYTOPE     = "d30-86363435"
+POLYTOPE     = "d10-43226722"
 
 COLOR_SCHEME      = "Pastel1_r"
 COLOR_RANGE_BEGIN = 0.25   # between 0 and 1
