@@ -12,6 +12,7 @@ dependencies = [
     "jupyter>=1.0.0",
     "numpy-stl>=3.0.1",
     "jupytext==1.14.7",
+    "plotly>=5.16.1",
 ]
 name = "tope"
 version = "0.4"

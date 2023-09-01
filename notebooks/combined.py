@@ -7,9 +7,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.7
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -417,6 +417,27 @@ os.makedirs(DIR_STL, exist_ok=True)
 thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}.stl"))
 
 # %% [markdown]
+# ### Plotly mesh object (navigable in notebook)
+
+# %%
+triangles = []
+colors = []
+for n, p in N.facets.items():
+    tri = list(p.triangulate())
+    triangles.extend(tri)
+    color = mpl.colormaps[COLOR_SCHEME](n/len(N.facets))
+    colors.extend([color]*len(tri))
+
+# %%
+verts = np.concatenate(triangles)
+i = np.arange(len(triangles)) * 3
+
+import plotly.graph_objects as go
+mesh = go.Mesh3d(x=verts[:,0], y=verts[:,1], z=verts[:,2],
+                 i=i, j=i+1, k=i+2, facecolor=colors)
+go.Figure(mesh)
+
+# %% [markdown]
 # ## Experimental: shaded 3d net
 
 # %%
@@ -610,6 +631,7 @@ save_figs_to_dir(figs_nl_m, directory = savedir+'_nolabel_mirror', force=True)
 
 
 # %% [markdown]
+# =======
 # ## Save bundle
 #
 # Run this cell once to bundle all outputs together for download!
