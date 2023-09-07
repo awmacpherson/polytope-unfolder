@@ -7,9 +7,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.7
+#       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -335,6 +335,7 @@ animation.save(os.path.join(DIR_ANIMATION, f"{POLYTOPE}-{TAG}.mp4"), dpi=ANIMATI
 # # 3D net
 
 # %%
+P.save_index()
 N = P.net().unfold().in_own_span()
 
 # %% [markdown]
@@ -473,6 +474,33 @@ fig.savefig(os.path.join(DIR_SHADED_3D_NET, f"{POLYTOPE}-{TAG}.{IMAGE_FORMAT}"),
 facets = [P.get_facet(i) for i in range(len(P.faces[P.dim-1]))]
 facet_nets = [F.net().unfold().in_own_span() for F in facets]
 
+# %%
+LABEL_CFG = {"color": "white", "fontsize": "5", "ha": "center", "va": "center"}
+
+def get_facet_label_artists(N: Net) -> FacetLabels:
+    labels = []
+    for x in N.facets.values():
+        pos = x.vertices.mean(axis=0)
+        txt = str( x.meta[x.dim][0]["index"] )
+        labels.append(Text(*pos, text=txt, **LABEL_CFG))
+    return labels
+
+facet_net_labels = [get_facet_label_artists(F) for F in facet_nets]
+
+def get_facet_labels(N: Net) -> FacetLabels:
+    labels = []
+    for i, x in N.facets.items():
+        vertices = x.vertices
+        labels.append((str(N.tope.meta[N.tope.dim-1][i]["index"]), vertices.mean(axis=0)))
+    return labels
+
+from typing import Iterable
+
+def create_text_artists(*labels, **cfg) -> Iterable[Text]:
+    cfg = LABEL_CFG | cfg # default values
+    return [Text(*label[1], text=str(label[0]), **cfg) for label in labels]
+
+
 # %% [markdown]
 # ### Preview pane
 
@@ -502,6 +530,39 @@ TAG = get_tag()
 os.makedirs(DIR_2D, exist_ok=True)
 
 savedir = os.path.join(DIR_2D, f"{POLYTOPE}-{TAG}")
+os.makedirs(savedir, exist_ok=True)
+for n, ax in enumerate(axs):
+    save_subplot(fig, ax, os.path.join(savedir, f"{n}.{IMAGE_FORMAT}"), dpi=DPI)
+
+# %%
+lcs = [create_lc(list(net.iter_edges())) for net in facet_nets]
+facet_net_labels = [get_facet_label_artists(F) for F in facet_nets]
+
+# preview nets in approximately square grid
+h = int(np.ceil(np.sqrt(len(facets))))
+fig, axs = plt.subplots(h, h, figsize=(h*5,h*5))
+axs = list(itertools.chain(*axs))
+
+# hide and discard unused axes
+for _ in range(len(axs)-len(lcs)):
+    axs.pop().set_visible(False)
+
+# now display
+for ax, lc, labels in zip(axs, lcs, facet_net_labels):
+    ax.add_collection(lc)
+    for label in labels:
+        ax.add_artist(label)
+    configure_axes(ax, bg=BG_COLOR)
+
+# %% [markdown]
+# ### Save PNGs
+
+# %%
+TAG = get_tag()
+
+os.makedirs(DIR_2D, exist_ok=True)
+
+savedir = os.path.join(DIR_2D, f"{POLYTOPE}-{TAG}-l")
 os.makedirs(savedir, exist_ok=True)
 for n, ax in enumerate(axs):
     save_subplot(fig, ax, os.path.join(savedir, f"{n}.{IMAGE_FORMAT}"), dpi=DPI)
