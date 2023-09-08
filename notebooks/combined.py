@@ -174,26 +174,23 @@ for cm in mpl.colors.get_named_colors_mapping():
     print(f"{cm:24}", end="")
     count += 1
     if count%5==4: print()
-print("-----------------------")
+print("\n-----------------------")
 print("Note: b/g/r/c/m/y/k/w are short for blue/green/red/cyan/magenta/yellow/black/white.")
 
 # %%
 print("Available color schemes:")
 print("------------------------")
 count = 0
-for cm in mpl.colors.get_named_colors_mapping(): 
-    if cm.startswith("xkcd:"): continue
+for cm in mpl.colormaps: 
     print(f"{cm:20}", end="")
     count += 1
     if count%6==5: print()
-print("-----------------------")
-print("Note: b/g/r/c/m/y/k/w are short for blue/green/red/cyan/magenta/yellow/black/white.")
 
 # %% [markdown]
 # #### Paste one of these strings in between the quotation marks and run this cell (Shift+Enter) to preview a colour scheme!
 
 # %%
-PREVIEW_COLOR_SCHEME = "Spectral"
+PREVIEW_COLOR_SCHEME = "tab20_r"
 mpl.colormaps.get(PREVIEW_COLOR_SCHEME)
 
 # %% [markdown]
@@ -202,7 +199,7 @@ mpl.colormaps.get(PREVIEW_COLOR_SCHEME)
 # %%
 POLYTOPE     = "d10-43226722"
 
-COLOR_SCHEME      = "Pastel1_r"
+COLOR_SCHEME      = "tab20_r"
 COLOR_RANGE_BEGIN = 0.25   # between 0 and 1
 COLOR_RANGE_END   = 0.75   # between 0 and 1
 BG_COLOR         = "black"
@@ -417,22 +414,45 @@ assert thing.check()
 os.makedirs(DIR_STL, exist_ok=True)
 thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}.stl"))
 
+
 # %% [markdown]
 # ### Plotly mesh object (navigable in notebook)
+
+# %%
+def color_by_numbers(x: Iterable, lim, scheme=COLOR_SCHEME):
+    cm = mpl.colormaps[scheme]
+    return [cm(n/lim) for n in x]
+
+def color_faces(F: Tope, lim, scheme=COLOR_SCHEME) -> list[tuple]:
+    return color_by_numbers((face["index"] for face in F.meta[2]), lim, scheme=scheme)
+
+
+# %%
+triangles = []
+colors = []
+n_faces = len(P.faces[2])
+
+for facet in N.facets.values():
+    facet_colors = color_faces(facet, n_faces, scheme=COLOR_SCHEME)
+    for i in range(len(facet.faces[2])):     # face index
+        face = facet.get_face(i, k=2) # polygon embedded in 3d
+        tri = list(face.triangulate())
+        triangles.extend(tri)
+        colors.extend([facet_colors[i]] * len(tri)) # repeat ith color for number of triangles in the face
 
 # %%
 import plotly
 plotly.io.renderers.default = "iframe"
 import plotly.graph_objects as go
 
-# %%
-triangles = []
-colors = []
-for n, p in N.facets.items():
-    tri = list(p.triangulate())
-    triangles.extend(tri)
-    color = mpl.colormaps[COLOR_SCHEME](n/len(N.facets))
-    colors.extend([color]*len(tri))
+# %% [markdown]
+# triangles = []
+# colors = []
+# for n, p in N.facets.items():
+#     tri = list(p.triangulate())
+#     triangles.extend(tri)
+#     color = colored_faces
+#     colors.extend([color]*len(tri))
 
 # %%
 verts = np.concatenate(triangles)
