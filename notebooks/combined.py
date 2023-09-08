@@ -421,6 +421,11 @@ thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}.stl"))
 # ### Plotly mesh object (navigable in notebook)
 
 # %%
+import plotly
+plotly.io.renderers.default = "iframe"
+import plotly.graph_objects as go
+
+# %%
 triangles = []
 colors = []
 for n, p in N.facets.items():
@@ -433,7 +438,6 @@ for n, p in N.facets.items():
 verts = np.concatenate(triangles)
 i = np.arange(len(triangles)) * 3
 
-import plotly.graph_objects as go
 mesh = go.Mesh3d(x=verts[:,0], y=verts[:,1], z=verts[:,2],
                  i=i, j=i+1, k=i+2, facecolor=colors)
 go.Figure(mesh)

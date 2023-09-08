@@ -100,8 +100,11 @@ class Tope:
         if self.dim != 3:
             raise ValueError("Can only triangulate a 3d polytope.")
         for face in self.iter_faces_as_arrays(2):
-            for i in range(len(face)-2):
-                yield face[i:i+3]
+            for i,j,k in itertools.combinations(face, 3):
+                yield np.stack([i,j,k])
+
+#            for i in range(len(face)-2):
+#                yield face[i:i+3]
 
     @classmethod
     def from_vertices(cls, vertices):
