@@ -501,7 +501,7 @@ facet_nets = [F.net().unfold().in_own_span() for F in facets]
 # %%
 LABEL_CFG = {"color": "white", "fontsize": "5", "ha": "center", "va": "center"}
 
-def get_facet_label_artists(N: Net) -> FacetLabels:
+def get_facet_label_artists(N: Net):
     labels = []
     for x in N.facets.values():
         pos = x.vertices.mean(axis=0)
@@ -511,7 +511,7 @@ def get_facet_label_artists(N: Net) -> FacetLabels:
 
 facet_net_labels = [get_facet_label_artists(F) for F in facet_nets]
 
-def get_facet_labels(N: Net) -> FacetLabels:
+def get_facet_labels(N: Net):
     labels = []
     for i, x in N.facets.items():
         vertices = x.vertices
