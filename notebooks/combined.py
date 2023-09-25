@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.7
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -190,7 +190,7 @@ for cm in mpl.colormaps:
 # #### Paste one of these strings in between the quotation marks and run this cell (Shift+Enter) to preview a colour scheme!
 
 # %%
-PREVIEW_COLOR_SCHEME = "tab20_r"
+PREVIEW_COLOR_SCHEME = "PuRd"
 mpl.colormaps.get(PREVIEW_COLOR_SCHEME)
 
 # %% [markdown]
@@ -199,7 +199,7 @@ mpl.colormaps.get(PREVIEW_COLOR_SCHEME)
 # %%
 POLYTOPE     = "d10-43226722"
 
-COLOR_SCHEME      = "tab20_r"
+COLOR_SCHEME      = "PuRd"
 COLOR_RANGE_BEGIN = 0.25   # between 0 and 1
 COLOR_RANGE_END   = 0.75   # between 0 and 1
 BG_COLOR         = "black"
@@ -419,42 +419,74 @@ thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}.stl"))
 # ### Plotly mesh object (navigable in notebook)
 
 # %%
+# Ad-hoc functions for colour scheme
+
 def color_by_numbers(x: Iterable, lim, scheme=COLOR_SCHEME):
     cm = mpl.colormaps[scheme]
-    return [cm(n/lim) for n in x]
+    return [cm(n/lim) for n in x] 
 
-def color_faces(F: Tope, lim, scheme=COLOR_SCHEME) -> list[tuple]:
-    return color_by_numbers((face["index"] for face in F.meta[2]), lim, scheme=scheme)
+def color_faces(F: Tope, lim, scheme=COLOR_SCHEME) -> list[tuple]: 
+    return color_by_numbers((face["index"] for face in F.meta[1]), lim, scheme=scheme)
 
 
 # %%
-triangles = []
-colors = []
-n_faces = len(P.faces[2])
+from tope.stl import edge_prism, icosahedron_mesh
 
+# Deal with vertices
+tr_vert = []
+colors_vert = []
+n_vert = len(P.faces[0])
+
+# Loop over facets
 for facet in N.facets.values():
-    facet_colors = color_faces(facet, n_faces, scheme=COLOR_SCHEME)
-    for i in range(len(facet.faces[2])):     # face index
-        face = facet.get_face(i, k=2) # polygon embedded in 3d
-        tri = list(face.triangulate())
-        triangles.extend(tri)
-        colors.extend([facet_colors[i]] * len(tri)) # repeat ith color for number of triangles in the face
+
+    # Define colours 
+    facet_colors = color_faces(facet, n_vert, scheme=COLOR_SCHEME)
+    for i in range(len(facet.faces[0])):     # edge index
+        face = facet.get_face(i, k=0) # polygon embedded in 3d
+
+        # Get triangles for edge prism (t is the prescriped thickness)
+        tri = icosahedron_mesh(face.vertices, t)
+
+        # Add triangles and colours
+        tr_vert.extend(tri)
+        colors_vert.extend([facet_colors[i]] * len(tri)) # repeat ith color for number of triangles in the prism fr the edge
+
+# Deal with edges
+tr_edge = []
+colors_edge = []
+n_edges = len(P.faces[1])
+
+# Generate one random 3D vector
+rv1 = np.random.rand(3)
+
+# Loop over facets
+for facet in N.facets.values():
+
+    # Define colours 
+    facet_colors = color_faces(facet, n_edges, scheme=COLOR_SCHEME)
+    for i in range(len(facet.faces[1])):     # edge index
+        face = facet.get_face(i, k=1) # polygon embedded in 3d
+
+        # Get triangles for edge prism (t is the prescriped thickness)
+        tri = edge_prism(face.vertices, t, rv1)
+
+        # Add triangles and colours
+        tr_edge.extend(tri)
+        colors_edge.extend([facet_colors[i]] * len(tri)) # repeat ith color for number of triangles in the prism fr the edge
+
+
+colors = colors_edge+colors_vert
+triangles = tr_edge+tr_vert
+
+# %% [markdown]
+# Plot in plotly
 
 # %%
 import plotly
 plotly.io.renderers.default = "iframe"
 import plotly.graph_objects as go
 
-# %% [markdown]
-# triangles = []
-# colors = []
-# for n, p in N.facets.items():
-#     tri = list(p.triangulate())
-#     triangles.extend(tri)
-#     color = colored_faces
-#     colors.extend([color]*len(tri))
-
-# %%
 verts = np.concatenate(triangles)
 i = np.arange(len(triangles)) * 3
 
