@@ -414,20 +414,70 @@ assert thing.check()
 os.makedirs(DIR_STL, exist_ok=True)
 thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}.stl"))
 
-
 # %% [markdown]
 # ### Plotly mesh object (navigable in notebook)
 
-# %%
-# Ad-hoc functions for colour scheme
+# %% [markdown]
+# Define ad-hoc colour map
 
-def color_by_numbers(x: Iterable, lim, scheme=COLOR_SCHEME):
-    cm = mpl.colormaps[scheme]
+# %%
+# Define ad-hoc colour map
+import matplotlib.pyplot as plt
+
+# Define the RAL colors and their HTML color codes
+ral_colors = ["#C2B078", "#8A6642", "#E1CC4F", "#E55137", "#C1876B", "#D36E70", "#642424", "#6D3F5B", "#633A34", "#6C3B2A"]
+
+# Create a color map
+fig, ax = plt.subplots(figsize=(8, 1))
+cmap = plt.cm.colors.ListedColormap(ral_colors)
+bounds = range(len(ral_colors)+1)
+norm = plt.cm.colors.BoundaryNorm(bounds, cmap.N)
+
+# Create a color bar
+cb = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm),
+                  cax=ax, orientation='horizontal', ticks=bounds)
+
+plt.title("RAL Color Map")
+plt.show()
+
+# %%
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as mpl
+
+# Define the RAL colors and their HTML color codes
+ral_colors = ["#C2B078", "#8A6642", "#E1CC4F", "#E55137", "#C1876B", "#D36E70", "#642424", "#6D3F5B", "#633A34", "#6C3B2A"]
+
+# Define how many colours you want (so that we can interpolate)
+num_intermediate_colors = max(len(P.faces[1]), len(P.faces[0]))
+
+# Interpolate colour
+color_segments = []
+for i in range(len(ral_colors) - 1):
+    start_color = mpl.colors.hex2color(ral_colors[i])
+    end_color = mpl.colors.hex2color(ral_colors[i + 1])
+    
+    r = np.linspace(start_color[0], end_color[0], num_intermediate_colors)
+    g = np.linspace(start_color[1], end_color[1], num_intermediate_colors)
+    b = np.linspace(start_color[2], end_color[2], num_intermediate_colors)
+    
+    color_segment = np.column_stack((r, g, b))
+    color_segments.append(color_segment)
+
+interpolated_colors = np.vstack(color_segments)
+
+# Define colour map from interpolated colours
+cmap = LinearSegmentedColormap.from_list('custom_cmap', colors=interpolated_colors, N=num_intermediate_colors * (len(ral_colors) - 1))
+
+# Ad-hoc functions for colour scheme
+def color_by_numbers(x: Iterable, lim, cm):
     return [cm(n/lim) for n in x] 
 
-def color_faces(F: Tope, lim, scheme=COLOR_SCHEME) -> list[tuple]: 
-    return color_by_numbers((face["index"] for face in F.meta[1]), lim, scheme=scheme)
+def color_faces(F: Tope, lim, cm) -> list[tuple]: 
+    return color_by_numbers((face["index"] for face in F.meta[1]), lim, cm)
 
+
+# %% [markdown]
+# Define colours for edges and vertices of wireframe model.
 
 # %%
 from tope.stl import edge_prism, icosahedron_mesh
@@ -441,7 +491,7 @@ n_vert = len(P.faces[0])
 for facet in N.facets.values():
 
     # Define colours 
-    facet_colors = color_faces(facet, n_vert, scheme=COLOR_SCHEME)
+    facet_colors = color_faces(facet, n_vert, cmap)
     for i in range(len(facet.faces[0])):     # edge index
         face = facet.get_face(i, k=0) # polygon embedded in 3d
 
@@ -464,7 +514,7 @@ rv1 = np.random.rand(3)
 for facet in N.facets.values():
 
     # Define colours 
-    facet_colors = color_faces(facet, n_edges, scheme=COLOR_SCHEME)
+    facet_colors = color_faces(facet, n_edges, cmap)
     for i in range(len(facet.faces[1])):     # edge index
         face = facet.get_face(i, k=1) # polygon embedded in 3d
 
