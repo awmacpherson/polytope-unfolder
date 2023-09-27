@@ -425,56 +425,47 @@ thing.save(os.path.join(DIR_STL, f"{POLYTOPE}-{TAG}.stl"))
 import matplotlib.pyplot as plt
 
 # Define the RAL colors and their HTML color codes
-ral_colors = ["#C2B078", "#8A6642", "#E1CC4F", "#E55137", "#C1876B", "#D36E70", "#642424", "#6D3F5B", "#633A34", "#6C3B2A"]
+ral_colors = ["#d3b088", "#b38055", "#dfc49e", "#dc6452", "#ca8470", "#d17276", "#71342e", "#846181", "#924834", "#7c4d40"]
 
-# Create a color map
-fig, ax = plt.subplots(figsize=(8, 1))
 cmap = plt.cm.colors.ListedColormap(ral_colors)
-bounds = range(len(ral_colors)+1)
-norm = plt.cm.colors.BoundaryNorm(bounds, cmap.N)
+cmap
 
-# Create a color bar
-cb = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm),
-                  cax=ax, orientation='horizontal', ticks=bounds)
-
-plt.title("RAL Color Map")
-plt.show()
 
 # %%
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib as mpl
+import math
 
-# Define the RAL colors and their HTML color codes
-ral_colors = ["#C2B078", "#8A6642", "#E1CC4F", "#E55137", "#C1876B", "#D36E70", "#642424", "#6D3F5B", "#633A34", "#6C3B2A"]
-
-# Define how many colours you want (so that we can interpolate)
-num_intermediate_colors = max(len(P.faces[1]), len(P.faces[0]))
+# Define how many colours you want you want to interpolate by (so that the total is more that the max of different edges, vertices and faces)
+num_intermediate_colors = math.ceil((max(len(P.faces[1]), max(len(P.faces[0]), len(P.faces[2])))-10)/9)+2
 
 # Interpolate colour
 color_segments = []
-for i in range(len(ral_colors) - 1):
+for i in range(len(ral_colors)-1):
     start_color = mpl.colors.hex2color(ral_colors[i])
     end_color = mpl.colors.hex2color(ral_colors[i + 1])
     
-    r = np.linspace(start_color[0], end_color[0], num_intermediate_colors)
-    g = np.linspace(start_color[1], end_color[1], num_intermediate_colors)
-    b = np.linspace(start_color[2], end_color[2], num_intermediate_colors)
+    r = np.linspace(start_color[0], end_color[0], num_intermediate_colors)[:-1]
+    g = np.linspace(start_color[1], end_color[1], num_intermediate_colors)[:-1]
+    b = np.linspace(start_color[2], end_color[2], num_intermediate_colors)[:-1]
     
     color_segment = np.column_stack((r, g, b))
     color_segments.append(color_segment)
+color_segments.append(mpl.colors.hex2color(ral_colors[-1]))
 
 interpolated_colors = np.vstack(color_segments)
 
 # Define colour map from interpolated colours
-cmap = LinearSegmentedColormap.from_list('custom_cmap', colors=interpolated_colors, N=num_intermediate_colors * (len(ral_colors) - 1))
+cmap = LinearSegmentedColormap.from_list('custom_cmap', colors=interpolated_colors, N=num_intermediate_colors * (len(ral_colors)))
 
 # Ad-hoc functions for colour scheme
 def color_by_numbers(x: Iterable, lim, cm):
     return [cm(n/lim) for n in x] 
 
-def color_faces(F: Tope, lim, cm) -> list[tuple]: 
-    return color_by_numbers((face["index"] for face in F.meta[1]), lim, cm)
+def color_faces(F: Tope, lim, cm, perm,dim) -> list[tuple]: 
+    return color_by_numbers((perm[face["index"]] for face in F.meta[dim]), lim, cm)
 
+cmap
 
 # %% [markdown]
 # Define colours for edges and vertices of wireframe model.
@@ -487,11 +478,13 @@ tr_vert = []
 colors_vert = []
 n_vert = len(P.faces[0])
 
+# Permutation for indices (so similar shades are not close together)
+perm = np.random.permutation(n_vert)
+
 # Loop over facets
 for facet in N.facets.values():
-
     # Define colours 
-    facet_colors = color_faces(facet, n_vert, cmap)
+    facet_colors = color_faces(facet, n_vert, cmap, perm,0)
     for i in range(len(facet.faces[0])):     # edge index
         face = facet.get_face(i, k=0) # polygon embedded in 3d
 
@@ -507,6 +500,9 @@ tr_edge = []
 colors_edge = []
 n_edges = len(P.faces[1])
 
+# Permutation for indices (so similar shades are not close together)
+perm = np.random.permutation(n_edges)
+
 # Generate one random 3D vector
 rv1 = np.random.rand(3)
 
@@ -514,7 +510,7 @@ rv1 = np.random.rand(3)
 for facet in N.facets.values():
 
     # Define colours 
-    facet_colors = color_faces(facet, n_edges, cmap)
+    facet_colors = color_faces(facet, n_edges, cmap, perm,1)
     for i in range(len(facet.faces[1])):     # edge index
         face = facet.get_face(i, k=1) # polygon embedded in 3d
 
@@ -530,7 +526,42 @@ colors = colors_edge+colors_vert
 triangles = tr_edge+tr_vert
 
 # %% [markdown]
-# Plot in plotly
+# Plot in plotly (wireframe)
+
+# %%
+import plotly
+plotly.io.renderers.default = "iframe"
+import plotly.graph_objects as go
+
+verts = np.concatenate(triangles)
+i = np.arange(len(triangles)) * 3
+
+mesh = go.Mesh3d(x=verts[:,0], y=verts[:,1], z=verts[:,2],
+                 i=i, j=i+1, k=i+2, facecolor=colors)
+go.Figure(mesh)
+
+# %% [markdown]
+# Define colours for mesh plot
+
+# %%
+triangles = []
+colors = []
+n_faces = len(P.faces[2])
+
+# Permutation for indices (so similar shades are not close together)
+perm = np.random.permutation(n_faces)
+
+for facet in N.facets.values():
+    facet_colors = color_faces(facet, n_faces, cmap, perm, 2)
+    for i in range(len(facet.faces[2])):     # face index
+        face = facet.get_face(i, k=2) # polygon embedded in 3d
+        tri = list(face.triangulate())
+        triangles.extend(tri)
+        colors.extend([facet_colors[i]] * len(tri)) # repeat ith color for number of triangles in the face
+
+
+# %% [markdown]
+# Plot in plotly (mesh)
 
 # %%
 import plotly
