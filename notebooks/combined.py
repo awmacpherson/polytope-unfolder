@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.7
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -642,11 +642,14 @@ def create_text_artists(*labels, **cfg) -> Iterable[Text]:
 # ### Preview pane
 
 # %%
+list(facet_nets[0].iter_edges())[0]
+
+# %%
 lcs = [create_lc(list(net.iter_edges())) for net in facet_nets]
 
 # preview nets in approximately square grid
 h = int(np.ceil(np.sqrt(len(facets))))
-fig, axs = plt.subplots(h, h, figsize=(h*5,h*5))
+fig, axs = plt.subplots(h, h, figsize=(h*5,h*5), sharex=True, sharey=True)
 axs = list(itertools.chain(*axs))
 
 # hide and discard unused axes
@@ -677,7 +680,7 @@ facet_net_labels = [get_facet_label_artists(F) for F in facet_nets]
 
 # preview nets in approximately square grid
 h = int(np.ceil(np.sqrt(len(facets))))
-fig, axs = plt.subplots(h, h, figsize=(h*5,h*5))
+fig, axs = plt.subplots(h, h, figsize=(h*5,h*5), sharex=True, sharey=True)
 axs = list(itertools.chain(*axs))
 
 # hide and discard unused axes
@@ -743,7 +746,7 @@ def plot_nets(
     title_config: dict = {"fontsize": 5, "pad": -14},
     label = True, 
     mirror = False
-):    
+):
     # Compute common bounding box
     bbox = bounding_bbox_from_arrays(*(cell .vertices for N in nets for cell in N.facets.values()))
      
